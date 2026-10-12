@@ -53,6 +53,9 @@ describe("CGS ORIS Academy - 10 Acceptance Test Workflows", () => {
 
   // Test 3: Branching diagnosis scenario engine
   it("Test 3: Branching diagnosis reveals evidence only upon test selection and routes accurately", async () => {
+    // 0. Ensure fresh run state
+    await fetch(`${BASE_URL}/api/scenarios/case-01-banding-missing-nozzles`, { method: "POST" });
+
     // 1. Fetch scenario 1
     const scnRes = await fetch(`${BASE_URL}/api/scenarios/case-01-banding-missing-nozzles`);
     expect(scnRes.status).toBe(200);
@@ -209,5 +212,58 @@ describe("CGS ORIS Academy - 10 Acceptance Test Workflows", () => {
     }
   });
 
-  // Test 9 & 10: Verified by production build and test suites
+  // Test 9: Seamless role toggling between candidate and admin
+  it("Test 9: Seamless role toggling between candidate and admin accounts", async () => {
+    // 1. Switch to admin via POST /api/auth/switch
+    const switchToAdmin = await fetch(`${BASE_URL}/api/auth/switch`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: "admin" }),
+    });
+    expect(switchToAdmin.status).toBe(200);
+    const adminSwitchData = await switchToAdmin.json();
+    expect(adminSwitchData.success).toBe(true);
+    expect(adminSwitchData.user.role).toBe("admin");
+    expect(adminSwitchData.user.email).toBe("admin@cgs-oris.academy");
+    const adminCookies = switchToAdmin.headers.get("set-cookie") || "";
+
+    // 2. Verify /api/auth/me reflects admin
+    const adminMe = await fetch(`${BASE_URL}/api/auth/me`, {
+      headers: { Cookie: adminCookies },
+    });
+    const adminMeData = await adminMe.json();
+    expect(adminMeData.user.role).toBe("admin");
+
+    // 3. Verify /api/admin is accessible
+    const adminAccess = await fetch(`${BASE_URL}/api/admin`, {
+      headers: { Cookie: adminCookies },
+    });
+    expect(adminAccess.status).toBe(200);
+
+    // 4. Switch back to candidate / learner
+    const switchToLearner = await fetch(`${BASE_URL}/api/auth/switch`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: "learner" }),
+    });
+    expect(switchToLearner.status).toBe(200);
+    const learnerSwitchData = await switchToLearner.json();
+    expect(learnerSwitchData.success).toBe(true);
+    expect(learnerSwitchData.user.role).toBe("learner");
+    expect(learnerSwitchData.user.email).toBe("technician@cgs-oris.academy");
+    const learnerCookies = switchToLearner.headers.get("set-cookie") || "";
+
+    // 5. Verify /api/auth/me reflects learner
+    const learnerMe = await fetch(`${BASE_URL}/api/auth/me`, {
+      headers: { Cookie: learnerCookies },
+    });
+    const learnerMeData = await learnerMe.json();
+    expect(learnerMeData.user.role).toBe("learner");
+
+    // 6. Verify /api/admin rejects learner with 403
+    const blockedAccess = await fetch(`${BASE_URL}/api/admin`, {
+      headers: { Cookie: learnerCookies },
+    });
+    expect(blockedAccess.status).toBe(403);
+  });
 });

@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import { query } from "@/lib/db";
 import bcrypt from "bcryptjs";
@@ -7,7 +7,8 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "cgs-oris-field-service-academy-secret-key-2026-plymouth-mn"
 );
 
-const SESSION_COOKIE_NAME = "cgs_session_token";
+export const SESSION_COOKIE_NAME = "cgs_session_token";
+export const ROLE_COOKIE_NAME = "cgs_user_role";
 
 export interface UserSession {
   id: string;
@@ -43,36 +44,105 @@ export async function verifySessionToken(token: string): Promise<UserSession | n
   }
 }
 
+export async function getUserForRole(role: "admin" | "learner"): Promise<UserSession> {
+  const email = role === "admin" ? "admin@cgs-oris.academy" : "technician@cgs-oris.academy";
+  try {
+    const res = await query(
+      "SELECT id, email, full_name, role FROM users WHERE LOWER(email) = LOWER($1);",
+      [email]
+    );
+    if (res && res.rows.length > 0) {
+      const row = res.rows[0];
+      return {
+        id: row.id,
+        email: row.email,
+        fullName: row.full_name,
+        role: row.role as "admin" | "learner",
+      };
+    }
+  } catch {
+    // fallback if db query fails
+  }
+
+  if (role === "admin") {
+    return {
+      id: "usr_admin_01",
+      email: "admin@cgs-oris.academy",
+      fullName: "Sarah Jenkins (Technical Director)",
+      role: "admin",
+    };
+  }
+  return {
+    id: "usr_learner_01",
+    email: "technician@cgs-oris.academy",
+    fullName: "Alex Morgan (Field Service Candidate)",
+    role: "learner",
+  };
+}
+
 export async function getCurrentUser(): Promise<UserSession | null> {
   try {
-    const cookieStore = cookies();
-    const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-    if (!token) {
-      // Default to the seeded learner session so evaluation is instant without friction
-      return {
-        id: "usr_learner_01",
-        email: "technician@cgs-oris.academy",
-        fullName: "Alex Morgan (Field Service Candidate)",
-        role: "learner",
-      };
+    // 1. Check custom headers (x-user-role or authorization Bearer)
+    try {
+      const headerList = headers();
+      const roleHeader = headerList.get("x-user-role");
+      if (roleHeader === "admin" || roleHeader === "learner") {
+        return await getUserForRole(roleHeader);
+      }
+
+      const authHeader = headerList.get("authorization");
+      if (authHeader && authHeader.startsWith("Bearer ")) {
+        const bearerToken = authHeader.substring(7);
+        const verified = await verifySessionToken(bearerToken);
+        if (verified) return verified;
+      }
+    } catch {
+      // headers() unavailable (e.g. outside request context)
     }
-    const session = await verifySessionToken(token);
-    if (!session) {
-      return {
-        id: "usr_learner_01",
-        email: "technician@cgs-oris.academy",
-        fullName: "Alex Morgan (Field Service Candidate)",
-        role: "learner",
-      };
+
+    // 2. Check cookies
+    try {
+      const cookieStore = cookies();
+      const roleCookie = cookieStore.get(ROLE_COOKIE_NAME)?.value;
+      const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+
+      if (token) {
+        const session = await verifySessionToken(token);
+        if (session) {
+          if (roleCookie === "admin" && session.role !== "admin") {
+            return await getUserForRole("admin");
+          }
+          if (roleCookie === "learner" && session.role !== "learner") {
+            return await getUserForRole("learner");
+          }
+          return session;
+        }
+      }
+
+      if (roleCookie === "admin" || roleCookie === "learner") {
+        return await getUserForRole(roleCookie);
+      }
+    } catch {
+      // cookies() unavailable
     }
-    return session;
+
+    // 3. Check persistent database app_settings table
+    try {
+      const dbRoleRes = await query("SELECT value FROM app_settings WHERE key = 'active_role';");
+      if (dbRoleRes && dbRoleRes.rows.length > 0) {
+        const activeRole = dbRoleRes.rows[0].value;
+        if (activeRole === "admin" || activeRole === "learner") {
+          return await getUserForRole(activeRole);
+        }
+      }
+    } catch {
+      // app_settings unavailable
+    }
+
+    // Default to the seeded learner session
+    return await getUserForRole("learner");
   } catch {
-    return {
-      id: "usr_learner_01",
-      email: "technician@cgs-oris.academy",
-      fullName: "Alex Morgan (Field Service Candidate)",
-      role: "learner",
-    };
+    return await getUserForRole("learner");
   }
 }
 

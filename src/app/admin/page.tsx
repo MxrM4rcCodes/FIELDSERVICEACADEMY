@@ -85,6 +85,33 @@ export default function AdminPage() {
     }
   };
 
+  const handleSwitchToAdmin = async () => {
+    try {
+      setLoading(true);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("cgs_active_role", "admin");
+      }
+      const res = await fetch("/api/auth/switch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "admin" }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.token && typeof window !== "undefined") {
+        localStorage.setItem("cgs_session_token", data.token);
+      }
+      try {
+        document.cookie = "cgs_user_role=admin; path=/; max-age=2592000; SameSite=None; Secure";
+        if (data.token) {
+          document.cookie = `cgs_session_token=${data.token}; path=/; max-age=2592000; SameSite=None; Secure`;
+        }
+      } catch (e) {}
+      window.location.reload();
+    } catch (e: any) {
+      window.location.href = "/api/auth/switch?role=admin&redirect=/admin";
+    }
+  };
+
   if (loading) {
     return (
       <div className="py-24 text-center text-slate-400 font-mono text-sm">
@@ -96,18 +123,25 @@ export default function AdminPage() {
 
   if (error) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-16 text-center space-y-4">
-        <div className="w-16 h-16 rounded-full bg-rose-950/60 border border-rose-600/40 flex items-center justify-center mx-auto text-rose-400">
+      <div className="max-w-2xl mx-auto px-4 py-16 text-center space-y-5">
+        <div className="w-16 h-16 rounded-full bg-rose-950/60 border border-rose-600/40 flex items-center justify-center mx-auto text-rose-400 shadow-xl shadow-rose-950/30">
           <Lock className="w-8 h-8" />
         </div>
         <h1 className="text-xl font-bold text-white">403 Unauthorized: Admin Access Restricted</h1>
         <p className="text-xs text-slate-300 leading-relaxed max-w-md mx-auto">
           {error}
         </p>
-        <div className="pt-2">
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button
+            onClick={handleSwitchToAdmin}
+            className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center justify-center space-x-2 shadow-lg shadow-purple-600/30 transition-all"
+          >
+            <Shield className="w-4 h-4" />
+            <span>Switch to Administrator (Sarah Jenkins) Mode</span>
+          </button>
           <a
             href="/"
-            className="inline-block px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold"
+            className="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold text-center"
           >
             Return to Candidate Dashboard
           </a>

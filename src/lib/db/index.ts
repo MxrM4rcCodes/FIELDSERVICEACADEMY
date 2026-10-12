@@ -10,7 +10,9 @@ declare global {
   var __cgs_db_init_promise: Promise<PGlite> | undefined;
 }
 
-const DB_DATA_DIR = process.env.PG_DATA_DIR || path.join(process.cwd(), "data", "pgdata");
+const DB_DATA_DIR =
+  process.env.PG_DATA_DIR ||
+  (process.env.VITEST ? path.join(process.cwd(), "data", "pgdata_test") : path.join(process.cwd(), "data", "pgdata"));
 
 export async function getDb(): Promise<PGlite> {
   if (global.__cgs_db) {

@@ -34,4 +34,6 @@ yarn-error.log*
 next-env.d.ts
 
 # pglite local data storage
+data/
 data/pgdata/
+data/pgdata_test/

@@ -35,4 +35,18 @@ describe("Authentication & Session Handling", () => {
     expect(decoded?.id).toBe("usr_test_01");
     expect(decoded?.role).toBe("learner");
   });
+
+  it("should resolve proper user identities when toggling roles", async () => {
+    const { getUserForRole } = await import("../src/lib/auth");
+
+    const adminUser = await getUserForRole("admin");
+    expect(adminUser.role).toBe("admin");
+    expect(adminUser.email).toBe("admin@cgs-oris.academy");
+    expect(adminUser.fullName).toContain("Sarah Jenkins");
+
+    const learnerUser = await getUserForRole("learner");
+    expect(learnerUser.role).toBe("learner");
+    expect(learnerUser.email).toBe("technician@cgs-oris.academy");
+    expect(learnerUser.fullName).toContain("Alex Morgan");
+  });
 });

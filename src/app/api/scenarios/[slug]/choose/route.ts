@@ -21,10 +21,10 @@ export async function POST(
 
     // 1. Get active run
     const runRes = await query(
-      `SELECT r.id, r.scenario_id, r.current_node_key, r.total_score, r.safety_score, r.diagnostic_score, r.status
+      `SELECT r.id, r.scenario_id, r.current_node_key, r.total_score, r.safety_score, r.diagnostic_score, r.status, r.user_id
        FROM scenario_runs r
-       WHERE r.id = $1 AND r.user_id = $2;`,
-      [runId, user.id]
+       WHERE r.id = $1;`,
+      [runId]
     );
 
     if (runRes.rows.length === 0) {
