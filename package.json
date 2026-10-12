@@ -1,0 +1,47 @@
+{
+  "name": "m.a.r.c.ai",
+  "version": "1.0.0",
+  "description": "Art Education AI that sources larger art historical contexts and more niche non-canon ideaologies",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev -H 0.0.0.0",
+    "build": "next build",
+    "start": "next start -H 0.0.0.0",
+    "test": "vitest run",
+    "seed": "tsx -e 'import { runSeed } from \"./src/lib/db/seed\"; runSeed().catch(console.error);'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MxrM4rcCodes/M.A.R.C.AI.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MxrM4rcCodes/M.A.R.C.AI/issues"
+  },
+  "homepage": "https://github.com/MxrM4rcCodes/M.A.R.C.AI#readme",
+  "dependencies": {
+    "@electric-sql/pglite": "^0.2.11",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/node": "^20.19.43",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.1",
+    "autoprefixer": "^10.4.20",
+    "bcryptjs": "^2.4.3",
+    "canvas-confetti": "^1.9.4",
+    "jose": "^5.9.6",
+    "lucide-react": "^0.453.0",
+    "next": "^14.2.24",
+    "postcss": "^8.4.47",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwindcss": "^3.4.14",
+    "typescript": "^5.6.3"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15",
+    "vitest": "^2.1.3"
+  }
+}
