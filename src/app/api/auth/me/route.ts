@@ -6,21 +6,13 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ user: null });
-  }
+  if (!user) return NextResponse.json({ user: null }, { status: 200 });
 
-  // Fetch full profile info
-  const profileRes = await query(
-    `SELECT target_interview_date, active_track, notes, experience_level 
-     FROM profiles WHERE user_id = $1;`,
-    [user.id]
+  const profile = await query(
+    `SELECT target_interview_date, active_track, experience_level
+       FROM profiles
+      WHERE user_id = $1`,
+    [user.id],
   );
-
-  return NextResponse.json({
-    user: {
-      ...user,
-      profile: profileRes.rows[0] || null,
-    },
-  });
+  return NextResponse.json({ user, profile: profile.rows[0] || null });
 }

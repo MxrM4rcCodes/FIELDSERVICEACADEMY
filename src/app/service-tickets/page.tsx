@@ -1,52 +1,64 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import {
-  FileText,
-  Plus,
-  Printer,
-  CheckCircle2,
-  Clock,
-  ShieldCheck,
-  RefreshCw,
-  Search,
-  ArrowRight,
-} from "lucide-react";
+import { FileText, Plus, Printer } from "lucide-react";
+
+const statusLabels: Record<string, string> = {
+  open: "Open",
+  pending_parts: "Pending follow-up",
+  escalated: "Escalated",
+  completed: "Completed",
+};
 
 export default function ServiceTicketsPage() {
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  const [editingTicketId, setEditingTicketId] = useState<string | null>(null);
+  const [formError, setFormError] = useState("");
+  const [loadError, setLoadError] = useState("");
 
-  // Form State
-  const [formData, setFormData] = useState({
+  // The blank form intentionally contains no assumed equipment settings or completed safety actions.
+  const emptyForm = {
     customerName: "",
-    equipmentModel: "Platinum Flatbed 2513 UV",
-    serialNumber: "PT-2026-",
+    equipmentModel: "",
+    serialNumber: "",
     customerComplaint: "",
-    safetyAssessment: "Lockout/Tagout performed at primary 208V disconnect; 0.0V measured L1-L2, L2-L3, L-G; nitrile gloves and UV eye protection worn.",
-    configurationNotes: "Onyx RIP v22 with CGS ORIS DeviceLink profile; 8-pass bi-directional mode; 395nm UV LED lamps at 80% power.",
+    safetyAssessment: "",
+    configurationNotes: "",
     diagnosticTestsPerformed: "",
     observations: "",
     actionsTaken: "",
     verificationResults: "",
     customerCommunication: "",
-    escalationFollowUp: "None required. Call closed.",
-    status: "completed",
-  });
+    escalationFollowUp: "",
+    status: "open",
+  };
+  const [formData, setFormData] = useState(emptyForm);
 
-  const loadTickets = async () => {
+  const loadTickets = async (preferredId?: string) => {
     try {
       setLoading(true);
       const res = await fetch("/api/service-tickets");
       const json = await res.json();
-      setTickets(json.tickets || []);
-      if (json.tickets && json.tickets.length > 0 && !selectedTicket) {
-        setSelectedTicket(json.tickets[0]);
+      if (!res.ok) {
+        setTickets([]);
+        setSelectedTicket(null);
+        setLoadError(json.error || "Unable to load your saved training records.");
+        return;
       }
+      setLoadError("");
+      const nextTickets = Array.isArray(json.tickets) ? json.tickets : [];
+      setTickets(nextTickets);
+      const nextSelected = nextTickets.find((ticket: any) => ticket.id === preferredId)
+        || nextTickets.find((ticket: any) => ticket.id === selectedTicket?.id)
+        || nextTickets[0]
+        || null;
+      setSelectedTicket(nextSelected);
     } catch (e) {
       console.error(e);
+      setLoadError("Unable to reach the server. Your saved training records could not be loaded.");
     } finally {
       setLoading(false);
     }
@@ -56,21 +68,55 @@ export default function ServiceTicketsPage() {
     loadTickets();
   }, []);
 
+  const startNewTicket = () => {
+    setEditingTicketId(null);
+    setFormData(emptyForm);
+    setFormError("");
+    setIsCreating(true);
+  };
+
+  const startEditingTicket = () => {
+    if (!selectedTicket) return;
+    setEditingTicketId(selectedTicket.id);
+    setFormError("");
+    setFormData({
+      customerName: selectedTicket.customer_name || "",
+      equipmentModel: selectedTicket.equipment_model || "",
+      serialNumber: selectedTicket.serial_number === "Not provided" ? "" : (selectedTicket.serial_number || ""),
+      customerComplaint: selectedTicket.customer_complaint || "",
+      safetyAssessment: selectedTicket.safety_assessment || "",
+      configurationNotes: selectedTicket.configuration_notes || "",
+      diagnosticTestsPerformed: selectedTicket.diagnostic_tests_performed || "",
+      observations: selectedTicket.observations || "",
+      actionsTaken: selectedTicket.actions_taken || "",
+      verificationResults: selectedTicket.verification_results || "",
+      customerCommunication: selectedTicket.customer_communication || "",
+      escalationFollowUp: selectedTicket.escalation_follow_up || "",
+      status: selectedTicket.status || "open",
+    });
+    setIsCreating(true);
+  };
+
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError("");
     try {
-      const res = await fetch("/api/service-tickets", {
-        method: "POST",
+      const res = await fetch(editingTicketId ? `/api/service-tickets/${editingTicketId}` : "/api/service-tickets", {
+        method: editingTicketId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
       const data = await res.json();
-      if (data.success) {
-        setIsCreating(false);
-        await loadTickets();
+      if (!res.ok || !data.success) {
+        setFormError(data.error || "Unable to save this training record.");
+        return;
       }
+      setIsCreating(false);
+      setEditingTicketId(null);
+      await loadTickets(data.ticket.id);
     } catch (e) {
       console.error(e);
+      setFormError("Unable to reach the server. Your edits have not been saved.");
     }
   };
 
@@ -85,24 +131,33 @@ export default function ServiceTicketsPage() {
         <div>
           <div className="flex items-center space-x-2 text-xs font-mono text-teal-400 font-semibold uppercase tracking-wider">
             <FileText className="w-4 h-4" />
-            <span>Field Service Administration</span>
+            <span>Personal Learning Records</span>
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight mt-1">
-            Service Documentation Lab
+            Training Record Notebook
           </h1>
           <p className="text-xs text-slate-400 max-w-2xl">
-            10-field audit-compliant field service reports. Document equipment configuration, safety energy isolation, tests, observations, actions, customer signoff, and print reports.
+            Save private, account-scoped training records. Keep entries factual and use simulated or sanitized examples; these are not official OEM, employer, warranty, or compliance documents.
           </p>
         </div>
 
         <div className="flex items-center space-x-3">
           <button
-            onClick={() => setIsCreating(!isCreating)}
+            onClick={() => isCreating ? (setIsCreating(false), setEditingTicketId(null)) : startNewTicket()}
             className="flex items-center space-x-1.5 bg-teal-600 hover:bg-teal-500 text-white px-3.5 py-2 rounded-lg text-xs font-bold transition-colors shadow-md"
           >
             <Plus className="w-4 h-4" />
-            <span>{isCreating ? "View Tickets" : "Draft New Ticket"}</span>
+            <span>{isCreating ? "View Tickets" : "New Training Record"}</span>
           </button>
+          {selectedTicket && !isCreating && (
+            <button
+              onClick={startEditingTicket}
+              className="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-3.5 py-2 rounded-lg text-xs font-medium"
+            >
+              <FileText className="w-4 h-4 text-teal-400" />
+              <span>Edit Record</span>
+            </button>
+          )}
           {selectedTicket && (
             <button
               onClick={handlePrint}
@@ -122,36 +177,39 @@ export default function ServiceTicketsPage() {
           className="bg-[#0F1A2E] border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl max-w-4xl mx-auto no-print"
         >
           <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white">Create Official Field Service Ticket</h2>
-            <span className="text-[10px] font-mono text-teal-400 uppercase">CGS ORIS Field Standard</span>
+            <h2 className="text-lg font-bold text-white">{editingTicketId ? "Edit Training Service Record" : "New Training Service Record"}</h2>
+            <span className="text-[10px] font-mono text-amber-300 uppercase">Training simulation only · not an official service record</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
             <div>
-              <label className="block text-slate-400 mb-1 font-mono uppercase text-[10px]">Customer Name & Location *</label>
+              <label className="block text-slate-400 mb-1 font-mono uppercase text-[10px]">Training Case / Simulated Organization *</label>
               <input
                 type="text"
                 required
-                placeholder="e.g. Acme Printing, Minneapolis MN"
+                maxLength={150}
+                placeholder="Use a training alias; avoid real personal data"
                 value={formData.customerName}
                 onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
               />
             </div>
             <div>
-              <label className="block text-slate-400 mb-1 font-mono uppercase text-[10px]">Equipment Model *</label>
+              <label className="block text-slate-400 mb-1 font-mono uppercase text-[10px]">Device Family / Model (if known) *</label>
               <input
                 type="text"
                 required
+                maxLength={150}
                 value={formData.equipmentModel}
                 onChange={(e) => setFormData({ ...formData, equipmentModel: e.target.value })}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
               />
             </div>
             <div>
-              <label className="block text-slate-400 mb-1 font-mono uppercase text-[10px]">Serial Number</label>
+              <label className="block text-slate-400 mb-1 font-mono uppercase text-[10px]">Training Identifier (do not enter a real serial number)</label>
               <input
                 type="text"
+                maxLength={100}
                 value={formData.serialNumber}
                 onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
@@ -161,11 +219,12 @@ export default function ServiceTicketsPage() {
 
           <div className="space-y-3 text-xs">
             <div>
-              <label className="block text-slate-400 mb-1 font-mono uppercase text-[10px]">Customer-Reported Symptom *</label>
+              <label className="block text-slate-400 mb-1 font-mono uppercase text-[10px]">Training-Case Reported Symptom *</label>
               <textarea
                 rows={2}
                 required
-                placeholder="Verbatim customer complaint and observed failure mode..."
+                maxLength={5000}
+                placeholder="Record the reported symptom and distinguish it from your own observations..."
                 value={formData.customerComplaint}
                 onChange={(e) => setFormData({ ...formData, customerComplaint: e.target.value })}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
@@ -173,32 +232,50 @@ export default function ServiceTicketsPage() {
             </div>
 
             <div>
-              <label className="block text-slate-400 mb-1 font-mono uppercase text-[10px]">Safety Assessment & LOTO Verification *</label>
-              <input
-                type="text"
+              <label className="block text-slate-400 mb-1 font-mono uppercase text-[10px]">Safety Assessment / Safe State *</label>
+              <textarea
+                rows={2}
                 required
+                maxLength={5000}
+                placeholder="For the simulation, record the reported concern and stop-work/escalation decision. Do not claim isolation, PPE, or authorization unless actually established under the applicable site process."
                 value={formData.safetyAssessment}
                 onChange={(e) => setFormData({ ...formData, safetyAssessment: e.target.value })}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
               />
             </div>
 
+            <div>
+              <label className="block text-slate-400 mb-1 font-mono uppercase text-[10px]">Relevant Configuration</label>
+              <textarea
+                rows={2}
+                maxLength={5000}
+                placeholder="Record only verified model, software, media, mode, and configuration details relevant to the case."
+                value={formData.configurationNotes}
+                onChange={(e) => setFormData({ ...formData, configurationNotes: e.target.value })}
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
+              />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-slate-400 mb-1 font-mono uppercase text-[10px]">Diagnostic Tests Performed</label>
+                <label className="block text-slate-400 mb-1 font-mono uppercase text-[10px]">Diagnostic Tests Performed *</label>
                 <textarea
                   rows={2}
-                  placeholder="Nozzle checks, multimeters, manometer, ping tests..."
+                  required
+                  maxLength={5000}
+                  placeholder="List only tests actually performed; if none, say so. Include conditions and limits where known."
                   value={formData.diagnosticTestsPerformed}
                   onChange={(e) => setFormData({ ...formData, diagnosticTestsPerformed: e.target.value })}
                   className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
                 />
               </div>
               <div>
-                <label className="block text-slate-400 mb-1 font-mono uppercase text-[10px]">Observations & Evidence</label>
+                <label className="block text-slate-400 mb-1 font-mono uppercase text-[10px]">Observations & Evidence *</label>
                 <textarea
                   rows={2}
-                  placeholder="Measured parameters, line voltages, vacuum kPa..."
+                  required
+                  maxLength={5000}
+                  placeholder="Separate measured evidence from assumptions. Do not enter unverified settings."
                   value={formData.observations}
                   onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
                   className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
@@ -207,11 +284,12 @@ export default function ServiceTicketsPage() {
             </div>
 
             <div>
-              <label className="block text-slate-400 mb-1 font-mono uppercase text-[10px]">Actions Taken & Parts Replaced *</label>
+              <label className="block text-slate-400 mb-1 font-mono uppercase text-[10px]">Actions Actually Taken / None / Follow-up *</label>
               <textarea
                 rows={2}
                 required
-                placeholder="Precise technical steps, part numbers, mechanical calibrations performed..."
+                maxLength={5000}
+                placeholder="Record actions actually taken, or state that no physical action was performed. Do not imply a repair."
                 value={formData.actionsTaken}
                 onChange={(e) => setFormData({ ...formData, actionsTaken: e.target.value })}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
@@ -220,28 +298,60 @@ export default function ServiceTicketsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-slate-400 mb-1 font-mono uppercase text-[10px]">Verification Results</label>
+                <label className="block text-slate-400 mb-1 font-mono uppercase text-[10px]">Verification Results *</label>
                 <input
                   type="text"
-                  placeholder="Test print passed, Delta E verified, FAT signoff..."
+                  required
+                  maxLength={5000}
+                  placeholder="Record the criteria and actual observed result (or pending verification)."
                   value={formData.verificationResults}
                   onChange={(e) => setFormData({ ...formData, verificationResults: e.target.value })}
                   className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
                 />
               </div>
               <div>
-                <label className="block text-slate-400 mb-1 font-mono uppercase text-[10px]">Customer Communication / Training</label>
+                <label className="block text-slate-400 mb-1 font-mono uppercase text-[10px]">Customer Communication / Training *</label>
                 <input
                   type="text"
-                  placeholder="Daily maintenance training provided to lead operator..."
+                  required
+                  maxLength={5000}
+                  placeholder="Record updates, agreed next steps, and training actually provided."
                   value={formData.customerCommunication}
                   onChange={(e) => setFormData({ ...formData, customerCommunication: e.target.value })}
                   className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
                 />
               </div>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-slate-400 mb-1 font-mono uppercase text-[10px]">Escalation / Follow-up *</label>
+                <textarea
+                  rows={2}
+                  required
+                  maxLength={5000}
+                  placeholder="State escalation owner and follow-up, or explain why none is needed."
+                  value={formData.escalationFollowUp}
+                  onChange={(e) => setFormData({ ...formData, escalationFollowUp: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-400 mb-1 font-mono uppercase text-[10px]">Training Record Status *</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white"
+                >
+                  <option value="open">Open</option>
+                  <option value="pending_parts">Pending follow-up</option>
+                  <option value="escalated">Escalated</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+            </div>
           </div>
 
+          {formError && <p role="alert" className="rounded-lg border border-rose-700/50 bg-rose-950/30 p-3 text-sm text-rose-200">{formError}</p>}
           <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-800">
             <button
               type="button"
@@ -254,7 +364,7 @@ export default function ServiceTicketsPage() {
               type="submit"
               className="px-5 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-md"
             >
-              Save Service Ticket
+              {editingTicketId ? "Save Changes" : "Save Training Record"}
             </button>
           </div>
         </form>
@@ -264,11 +374,11 @@ export default function ServiceTicketsPage() {
           {/* Left: Ticket List (4 cols) */}
           <div className="lg:col-span-4 bg-[#0F1A2E] border border-slate-800 rounded-xl p-5 space-y-3 no-print">
             <h2 className="text-xs font-mono uppercase text-slate-400 font-bold tracking-wider">
-              Service Ticket History ({tickets.length})
+              Saved Training Records ({tickets.length})
             </h2>
 
             <div className="space-y-2">
-              {tickets.map((t) => {
+              {loading ? <p className="p-3 text-xs text-slate-400">Loading saved training records…</p> : loadError ? <p role="alert" className="p-3 text-xs text-rose-300">{loadError}</p> : tickets.length === 0 ? <p className="p-3 text-xs text-slate-400">No saved training records yet.</p> : tickets.map((t) => {
                 const isSelected = selectedTicket?.id === t.id;
                 return (
                   <button
@@ -282,7 +392,7 @@ export default function ServiceTicketsPage() {
                   >
                     <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-1">
                       <span>{t.ticket_number}</span>
-                      <span className="text-emerald-400 uppercase font-bold">{t.status}</span>
+                      <span className="text-emerald-400 uppercase font-bold">{statusLabels[t.status] || "Unknown status"}</span>
                     </div>
                     <div className="font-bold text-white truncate">{t.customer_name}</div>
                     <div className="text-[11px] text-slate-400 truncate mt-0.5">{t.customer_complaint}</div>
@@ -296,17 +406,17 @@ export default function ServiceTicketsPage() {
           <div className="lg:col-span-8">
             {selectedTicket ? (
               <div className="bg-[#0F1A2E] print:bg-white print:text-black border border-slate-800 print:border-none rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
-                {/* Formal Printable Report Header */}
+                {/* Printable training-record header; not an official service form. */}
                 <div className="border-b-2 border-slate-700 print:border-black pb-4 flex items-start justify-between">
                   <div>
                     <div className="text-xs font-mono font-bold text-teal-400 print:text-black uppercase tracking-wider">
-                      CGS ORIS AMERICAS • FIELD SERVICE REPORT
+                      FIELD SERVICE TRAINING RECORD • SIMULATED
                     </div>
                     <h2 className="text-xl font-black text-white print:text-black tracking-tight mt-1">
                       {selectedTicket.customer_name}
                     </h2>
                     <div className="text-xs text-slate-400 print:text-gray-600 font-mono mt-0.5">
-                      Model: {selectedTicket.equipment_model} • S/N: {selectedTicket.serial_number}
+                      Device/model: {selectedTicket.equipment_model} • Training ID: {selectedTicket.serial_number}
                     </div>
                   </div>
 
@@ -320,18 +430,21 @@ export default function ServiceTicketsPage() {
                   </div>
                 </div>
 
-                {/* 10 Audit Fields */}
+                {/* Training record details */}
                 <div className="grid grid-cols-1 gap-4 text-xs">
                   <div className="p-3 rounded-lg bg-slate-900/80 print:bg-gray-50 border border-slate-800 print:border-gray-200">
-                    <span className="text-[10px] font-mono uppercase text-slate-400 print:text-gray-500 font-bold block mb-0.5">
-                      Customer Complaint
-                    </span>
+                    <span className="text-[10px] font-mono uppercase text-slate-400 print:text-gray-500 font-bold block mb-0.5">Training-Case Reported Symptom</span>
                     <p className="text-slate-200 print:text-black font-medium">{selectedTicket.customer_complaint}</p>
                   </div>
 
                   <div className="p-3 rounded-lg bg-slate-900/80 print:bg-gray-50 border border-slate-800 print:border-gray-200">
+                    <span className="text-[10px] font-mono uppercase text-slate-400 print:text-gray-500 font-bold block mb-0.5">Relevant Configuration</span>
+                    <p className="text-slate-200 print:text-black">{selectedTicket.configuration_notes || "Not recorded"}</p>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-slate-900/80 print:bg-gray-50 border border-slate-800 print:border-gray-200">
                     <span className="text-[10px] font-mono uppercase text-slate-400 print:text-gray-500 font-bold block mb-0.5">
-                      Safety & Zero-Energy Isolation (LOTO)
+                      Safety Context / Reported Response (No Certification Implied)
                     </span>
                     <p className="text-slate-200 print:text-black">{selectedTicket.safety_assessment}</p>
                   </div>
@@ -353,7 +466,7 @@ export default function ServiceTicketsPage() {
 
                   <div className="p-3 rounded-lg bg-slate-900/80 print:bg-gray-50 border border-slate-800 print:border-gray-200">
                     <span className="text-[10px] font-mono uppercase text-teal-400 print:text-black font-bold block mb-0.5">
-                      Corrective Actions Taken & Calibrations
+                      Actions Recorded (Training Only)
                     </span>
                     <p className="text-slate-200 print:text-black font-medium">{selectedTicket.actions_taken}</p>
                   </div>
@@ -367,32 +480,24 @@ export default function ServiceTicketsPage() {
                     </div>
                     <div className="p-3 rounded-lg bg-slate-900/80 print:bg-gray-50 border border-slate-800 print:border-gray-200">
                       <span className="text-[10px] font-mono uppercase text-slate-400 print:text-gray-500 font-bold block mb-0.5">
-                        Customer Communication & Training
+                        Communication / Training Logged
                       </span>
                       <p className="text-slate-200 print:text-black">{selectedTicket.customer_communication}</p>
                     </div>
                   </div>
+                  <div className="p-3 rounded-lg bg-slate-900/80 print:bg-gray-50 border border-slate-800 print:border-gray-200">
+                    <span className="text-[10px] font-mono uppercase text-slate-400 print:text-gray-500 font-bold block mb-0.5">Escalation / Follow-up</span>
+                    <p className="text-slate-200 print:text-black">{selectedTicket.escalation_follow_up}</p>
+                  </div>
                 </div>
 
-                {/* Signature Block for Print */}
-                <div className="pt-8 border-t border-slate-850 print:border-black grid grid-cols-2 gap-8 text-xs">
-                  <div>
-                    <div className="border-b border-slate-700 print:border-black pb-8"></div>
-                    <div className="text-[10px] font-mono text-slate-400 print:text-black uppercase mt-1">
-                      Customer Authorized Signature & Acceptance
-                    </div>
-                  </div>
-                  <div>
-                    <div className="border-b border-slate-700 print:border-black pb-8"></div>
-                    <div className="text-[10px] font-mono text-slate-400 print:text-black uppercase mt-1">
-                      CGS ORIS Field Service Engineer Signature
-                    </div>
-                  </div>
-                </div>
+                <p className="border-t border-slate-700 pt-3 text-[10px] text-slate-400 print:border-gray-500 print:text-gray-700">
+                  Educational training record only. Not an official manufacturer or employer service form, safety certification, warranty record, or compliance document. Use simulated or sanitized content.
+                </p>
               </div>
             ) : (
               <div className="text-center py-24 text-slate-500 italic text-xs">
-                Select a ticket to review or click 'Draft New Ticket'.
+                Select a saved training record or create a new simulated record.
               </div>
             )}
           </div>

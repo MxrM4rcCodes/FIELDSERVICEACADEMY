@@ -1,18 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Palette,
-  Calculator,
-  Layers,
-  Sparkles,
-  Info,
-  CheckCircle2,
-  AlertTriangle,
-  RotateCcw,
-  Sliders,
-  Eye,
-} from "lucide-react";
+import { Palette, Calculator, Layers, Info, Eye } from "lucide-react";
+import { deltaE00, deltaE76 } from "@/lib/color";
 
 export default function ColorLabPage() {
   // Delta E Calculator State
@@ -30,60 +20,32 @@ export default function ColorLabPage() {
   // Measurement Condition Tab
   const [activeMMode, setActiveMMode] = useState<"M0" | "M1" | "M2" | "M3">("M1");
 
-  // Calculate Delta E 76
-  const deltaL = samL - refL;
-  const deltaA = samA - refA;
-  const deltaB = samB - refB;
-  const deltaE76 = Math.sqrt(deltaL * deltaL + deltaA * deltaA + deltaB * deltaB);
-
-  // Simplified approximation of Delta E 2000 for interactive educational visualization
-  const c1 = Math.sqrt(refA * refA + refB * refB);
-  const c2 = Math.sqrt(samA * samA + samB * samB);
-  const deltaC = c2 - c1;
-  const deltaH2 = Math.max(0, deltaE76 * deltaE76 - deltaL * deltaL - deltaC * deltaC);
-  const deltaH = Math.sqrt(deltaH2);
-  const deltaE00 = Math.sqrt(
-    Math.pow(deltaL / 1.0, 2) +
-    Math.pow(deltaC / (1 + 0.045 * c1), 2) +
-    Math.pow(deltaH / (1 + 0.015 * c1), 2)
-  );
-
-  const getDeltaECommercialStatus = (val: number) => {
-    if (val <= 1.0) {
-      return { rating: "Excellent Match", desc: "Imperceptible to normal human vision under standard D50 lighting.", color: "text-emerald-400 bg-emerald-950/40 border-emerald-800" };
-    }
-    if (val <= 2.0) {
-      return { rating: "Commercial Pass", desc: "Accepted industry tolerance for contract proofing and strict brand colors.", color: "text-teal-400 bg-teal-950/40 border-teal-800" };
-    }
-    if (val <= 3.5) {
-      return { rating: "Marginal / Noticeable Shift", desc: "Noticeable under side-by-side comparison. Unacceptable for luxury packaging; acceptable for distance signage.", color: "text-amber-400 bg-amber-950/40 border-amber-800" };
-    }
-    return { rating: "Severe Mismatch", desc: "Gross visual error. Customer will reject print.", color: "text-rose-400 bg-rose-950/40 border-rose-800" };
-  };
-
-  const deltaEStatus = getDeltaECommercialStatus(deltaE00);
+  const referenceLab = { L: refL, a: refA, b: refB };
+  const sampleLab = { L: samL, a: samA, b: samB };
+  const difference76 = deltaE76(referenceLab, sampleLab);
+  const difference00 = deltaE00(referenceLab, sampleLab);
 
   const substrates = {
     gloss_white: {
-      name: "High-Gloss Bright White Vinyl (OBA Coated)",
-      baseLab: "L* 95.2, a* -0.4, b* -2.1 (Slight blue fluorescence)",
+      name: "Illustrative light coated stock",
+      baseLab: "Illustrative neutral/bright base; actual values depend on stock and measurement conditions.",
       previewBg: "#F8FAFC",
       perceivedRed: "#DC2626",
-      notes: "High reflectance base. Colors print with maximum saturation and accurate hue.",
+      notes: "A light base often offers more available chroma than a dark substrate; verify the actual stock and target with an agreed measurement method.",
     },
     uncoated_kraft: {
       name: "Unbleached Natural Kraft Corrugated Board",
-      baseLab: "L* 64.8, a* +5.9, b* +24.1 (Heavy yellow-brown)",
+      baseLab: "Illustrative warm, lower-lightness base; no measured coordinates are asserted.",
       previewBg: "#A38054",
       perceivedRed: "#854D27",
-      notes: "Severe white-point shift. Transparent CMYK inks turn Target Red into muddy brown without white underprint.",
+      notes: "A warm substrate can shift the appearance of translucent inks. A white underlayer is only an option when the specific printer, ink, workflow, and customer specification support it.",
     },
     coroplast: {
-      name: "White Fluted Polypropylene (Coroplast)",
-      baseLab: "L* 91.0, a* -0.2, b* +1.5 (Neutral white plastic)",
+      name: "Illustrative light plastic substrate",
+      baseLab: "Illustrative light plastic base; actual substrate properties vary by product and lot.",
       previewBg: "#E2E8F0",
       perceivedRed: "#E11D48",
-      notes: "Moderate reflectance. Requires surface dyne energy >= 44 dynes/cm for UV ink adhesion.",
+      notes: "Surface energy and adhesion depend on the specific substrate, ink, pretreatment, and approved test method. Do not assume a universal dyne threshold.",
     },
   };
 
@@ -99,16 +61,17 @@ export default function ColorLabPage() {
           Color Science & Spectrophotometry Lab
         </h1>
         <p className="text-xs text-slate-400 max-w-3xl leading-relaxed">
-          CIELAB color space, Delta E mathematical differences, ISO 13655 measurement standards, substrate white point influence, and DeviceLink color management.
+          CIELAB coordinates, Delta E calculations, ISO 13655 measurement-condition concepts, and the influence of the sample substrate.
         </p>
 
         {/* Browser Disclaimer Alert */}
         <div className="mt-3 p-3 rounded-lg bg-blue-950/30 border border-blue-900/40 text-blue-300 text-xs flex items-center space-x-2.5">
           <Info className="w-4 h-4 shrink-0 text-blue-400" />
           <span>
-            <strong>Educational Instrument Notice:</strong> Computer monitors display in sRGB color space and cannot reproduce physical spectrophotometry or UV ink spectral reflectance. Numerical Delta E coordinates represent actual physical measurement data.
+            <strong>Educational model:</strong> The adjustable CIELAB coordinates and swatches are illustrative values, not instrument readings. A numerical ΔE alone is not a pass/fail decision; use the agreed reference, substrate, instrument condition, measurement procedure, and customer tolerance.
           </span>
         </div>
+        <p className="mt-2 text-[10px] text-slate-500">Formula background: <a className="text-teal-300 underline" href="https://doi.org/10.1002/col.20070" target="_blank" rel="noreferrer">Sharma, Wu &amp; Dalal, CIEDE2000</a>. The formula describes a calculated difference; it does not define a contract tolerance.</p>
       </div>
 
       {/* SECTION 1: Interactive Delta E Calculator */}
@@ -127,8 +90,8 @@ export default function ColorLabPage() {
           {/* Reference Color Controls */}
           <div className="lg:col-span-4 bg-slate-900/80 border border-slate-800 p-4 rounded-xl space-y-3">
             <div className="text-xs font-mono uppercase text-slate-400 font-bold flex items-center justify-between">
-              <span>Standard (Brand Reference)</span>
-              <span className="text-teal-400">CIELAB Target</span>
+              <span>Reference CIELAB values (illustrative)</span>
+              <span className="text-teal-400">Reference Lab</span>
             </div>
 
             <div className="space-y-2 text-xs">
@@ -142,6 +105,7 @@ export default function ColorLabPage() {
                   min="0"
                   max="100"
                   step="0.5"
+                  aria-label="Reference L-star coordinate"
                   value={refL}
                   onChange={(e) => setRefL(parseFloat(e.target.value))}
                   className="w-full accent-teal-500"
@@ -155,9 +119,10 @@ export default function ColorLabPage() {
                 </div>
                 <input
                   type="range"
-                  min="-80"
+                  min="-100"
                   max="100"
                   step="0.5"
+                  aria-label="Reference a-star coordinate"
                   value={refA}
                   onChange={(e) => setRefA(parseFloat(e.target.value))}
                   className="w-full accent-teal-500"
@@ -171,9 +136,10 @@ export default function ColorLabPage() {
                 </div>
                 <input
                   type="range"
-                  min="-80"
+                  min="-100"
                   max="100"
                   step="0.5"
+                  aria-label="Reference b-star coordinate"
                   value={refB}
                   onChange={(e) => setRefB(parseFloat(e.target.value))}
                   className="w-full accent-teal-500"
@@ -185,8 +151,8 @@ export default function ColorLabPage() {
           {/* Sample Measured Color Controls */}
           <div className="lg:col-span-4 bg-slate-900/80 border border-slate-800 p-4 rounded-xl space-y-3">
             <div className="text-xs font-mono uppercase text-slate-400 font-bold flex items-center justify-between">
-              <span>Measured Production Sample</span>
-              <span className="text-blue-400">Spectrophotometer Scan</span>
+              <span>Sample CIELAB values (illustrative)</span>
+              <span className="text-blue-400">Sample Lab</span>
             </div>
 
             <div className="space-y-2 text-xs">
@@ -200,6 +166,7 @@ export default function ColorLabPage() {
                   min="0"
                   max="100"
                   step="0.5"
+                  aria-label="Sample L-star coordinate"
                   value={samL}
                   onChange={(e) => setSamL(parseFloat(e.target.value))}
                   className="w-full accent-blue-500"
@@ -213,9 +180,10 @@ export default function ColorLabPage() {
                 </div>
                 <input
                   type="range"
-                  min="-80"
+                  min="-100"
                   max="100"
                   step="0.5"
+                  aria-label="Sample a-star coordinate"
                   value={samA}
                   onChange={(e) => setSamA(parseFloat(e.target.value))}
                   className="w-full accent-blue-500"
@@ -229,9 +197,10 @@ export default function ColorLabPage() {
                 </div>
                 <input
                   type="range"
-                  min="-80"
+                  min="-100"
                   max="100"
                   step="0.5"
+                  aria-label="Sample b-star coordinate"
                   value={samB}
                   onChange={(e) => setSamB(parseFloat(e.target.value))}
                   className="w-full accent-blue-500"
@@ -249,23 +218,18 @@ export default function ColorLabPage() {
 
               <div className="flex items-baseline space-x-2">
                 <span className="text-3xl font-black font-mono text-teal-300">
-                  {deltaE00.toFixed(2)}
+                  {difference00.toFixed(2)}
                 </span>
                 <span className="text-xs font-mono text-slate-400">ΔE00 (CIEDE2000)</span>
               </div>
 
               <div className="text-xs text-slate-400 font-mono">
-                Legacy ΔE76: <strong>{deltaE76.toFixed(2)}</strong>
+                CIE 1976 ΔE*ab: <strong>{difference76.toFixed(2)}</strong>
               </div>
             </div>
 
-            {/* Commercial Evaluation Badge */}
-            <div className={`p-3 rounded-lg border text-xs space-y-1 ${deltaEStatus.color}`}>
-              <div className="font-bold flex items-center space-x-1.5 font-mono uppercase text-[11px]">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>{deltaEStatus.rating}</span>
-              </div>
-              <p className="text-[11px] leading-tight opacity-90">{deltaEStatus.desc}</p>
+            <div className="rounded-lg border border-amber-800 bg-amber-950/30 p-3 text-[11px] leading-relaxed text-amber-200">
+              This value describes a calculated color difference only. Whether it is acceptable depends on the agreed measurement and production specification.
             </div>
           </div>
         </div>
@@ -280,7 +244,7 @@ export default function ColorLabPage() {
           </div>
 
           <p className="text-xs text-slate-300 leading-relaxed">
-            Inkjet inks are transparent dye or pigment suspensions. Light travels through the ink, reflects off the substrate, and passes back through the ink.
+            The appearance of printed color depends on the ink's pigment, opacity and laydown as well as the substrate's surface and color. Some workflows use a white layer for contrast only when the specific device, materials, and customer specification support it.
           </p>
 
           {/* Substrate Selector */}
@@ -306,7 +270,7 @@ export default function ColorLabPage() {
           {/* Substrate Preview Swatch */}
           <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-3">
             <div className="text-[10px] font-mono text-slate-400 uppercase font-bold">
-              Simulated Target Red Appearance on Selected Stock:
+              Illustrative screen-color swatch (not a physical print simulation):
             </div>
             <div className="flex items-center space-x-4">
               <div
@@ -320,11 +284,7 @@ export default function ColorLabPage() {
               </div>
               <div className="text-xs text-slate-300 space-y-1">
                 <p className="font-medium text-white">{substrates[activeSubstrate].notes}</p>
-                {activeSubstrate === "uncoated_kraft" && (
-                  <span className="text-amber-400 text-[11px] font-bold block">
-                    ⚠️ Requires ORIS white ink underprint layer to avoid 5.0+ Delta E shift!
-                  </span>
-                )}
+
               </div>
             </div>
           </div>
@@ -338,7 +298,7 @@ export default function ColorLabPage() {
           </div>
 
           <p className="text-xs text-slate-300 leading-relaxed">
-            Standardized illumination geometry ensures measurements remain repeatable across different spectrophotometers and paper types.
+            ISO 13655 defines measurement conditions; instrument geometry, calibration, substrate, and the customer's reference procedure still matter. Match the specified condition when comparing readings.
           </p>
 
           <div className="grid grid-cols-4 gap-1.5 p-1 bg-slate-900 rounded-lg border border-slate-800 text-xs">
@@ -358,33 +318,33 @@ export default function ColorLabPage() {
           <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2 text-xs">
             {activeMMode === "M0" && (
               <>
-                <div className="font-bold text-teal-300 font-mono">Condition M0: Legacy Tungsten (Incandescent)</div>
+                <div className="font-bold text-teal-300 font-mono">Condition M0: illuminant-A-like measurement</div>
                 <p className="text-slate-300 text-[11px] leading-relaxed">
-                  Illuminant A with undefined UV content. Used in legacy printing standards. Phased out due to poor inter-instrument agreement on modern substrates with optical brighteners.
+                  ISO 13655 M0 approximates CIE standard illuminant A. Ultraviolet content can differ between instruments, so do not substitute conditions when optical brighteners or a contract target matter.
                 </p>
               </>
             )}
             {activeMMode === "M1" && (
               <>
-                <div className="font-bold text-teal-300 font-mono">Condition M1: D50 Daylight with Controlled UV</div>
+                <div className="font-bold text-teal-300 font-mono">Condition M1: D50-related measurement</div>
                 <p className="text-slate-300 text-[11px] leading-relaxed">
-                  <strong>The modern commercial benchmark.</strong> Incorporates exact CIE D50 daylight illumination matching the human eye under standard retail/pressroom lighting. Essential for measuring OBA-brightened packaging papers under GRACoL 2013 / Fogra 51.
+                  M1 is designed to provide a measurement condition consistent with CIE D50, including its ultraviolet component. It can matter when optical brighteners affect the result. Follow the applicable proofing or customer specification; no one condition is universal.
                 </p>
               </>
             )}
             {activeMMode === "M2" && (
               <>
-                <div className="font-bold text-teal-300 font-mono">Condition M2: UV-Cut (No UV Light)</div>
+                <div className="font-bold text-teal-300 font-mono">Condition M2: UV-cut</div>
                 <p className="text-slate-300 text-[11px] leading-relaxed">
-                  Filters out all wavelengths below 400nm, completely eliminating optical brightener fluorescence. Used in corrugated packaging where OBA variation causes proofing mismatches.
+                  M2 excludes ultraviolet energy from the measurement condition, reducing the contribution from fluorescent optical brighteners. Select it only when required by the relevant specification or comparison method.
                 </p>
               </>
             )}
             {activeMMode === "M3" && (
               <>
-                <div className="font-bold text-teal-300 font-mono">Condition M3: Polarized Filter</div>
+                <div className="font-bold text-teal-300 font-mono">Condition M3: UV-cut with polarization</div>
                 <p className="text-slate-300 text-[11px] leading-relaxed">
-                  Uses cross-polarization filters to eliminate surface specular glare. Essential for measuring wet ink, high-gloss UV coatings, and fine-art reflective textures on METIS scanners.
+                  M3 combines a UV-cut condition with polarization to reduce some surface-reflection effects. It is not a universal substitute for M0, M1, or M2; use the condition specified for the job and instrument.
                 </p>
               </>
             )}

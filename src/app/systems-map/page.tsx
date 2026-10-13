@@ -47,24 +47,24 @@ const workflowNodes: WorkflowNode[] = [
     id: "node_input",
     stageNumber: 1,
     title: "1. Artwork & Requirements",
-    subtitle: "Customer Digital Assets or Physical Decor",
+    subtitle: "Artwork, color targets, or a physical sample",
     category: "input",
     x: 40,
     y: 160,
     width: 220,
     height: 90,
-    description: "The originating source material: digital vector/raster artwork (PDF/X, TIFF, AI) or raw physical decorative surfaces (hardwood, leather, ceramic tile, marble).",
-    inputs: ["Brand guidelines", "Customer design files (PDF/X-4)", "Physical material prototypes", "Target color swatches (Pantone/CxF)"],
-    outputs: ["Verified prepress PDF", "Raw physical specimen ready for scanning", "Production specification sheets"],
-    mainComponents: ["Preflight verification", "Color intent definition", "Resolution check (300+ DPI at 100% scale)"],
-    cgsProducts: ["CGS CxF TOOLBOX (Digital Spectral Swatches)"],
-    commonFailures: ["Low-resolution bitmaps (72 DPI)", "Un-embedded fonts or un-flattened live transparencies", "Missing bleed margins or improper cut contours"],
-    diagnosticQuestions: ["Is the customer file submitted as certified PDF/X?", "Were RGB images converted using the proper working space?"],
+    description: "An example starting point for an imaging or print job. The deliverables, file formats, color references, and physical samples depend on the customer's workflow and job specification.",
+    inputs: ["Customer requirements", "Artwork files, if applicable", "Physical sample, if scanning is in scope", "Approved color reference and measurement terms"],
+    outputs: ["Recorded job requirements", "Usable input files or sample", "Agreed acceptance criteria"],
+    mainComponents: ["Confirm intended use", "Check supplied-file integrity", "Record target and substrate"],
+    cgsProducts: [],
+    commonFailures: ["Unclear acceptance criteria", "Unexpected file or embedded-profile issues", "Sample or substrate differs from the approved reference"],
+    diagnosticQuestions: ["What result did the customer request?", "Which reference, substrate, and acceptance method are agreed?"],
     upstreamNodes: [],
     downstreamNodes: ["node_metis", "node_color_prep"],
     relatedLessonSlug: "day-02-complete-digital-imaging-workflow",
     relatedLessonTitle: "Day 2: Complete Digital Imaging Workflow",
-    sourceConfidence: "Industry Standard (ISO 15930 PDF/X)",
+    sourceConfidence: "General workflow model; check the job specification",
   },
   {
     id: "node_metis",
@@ -76,18 +76,18 @@ const workflowNodes: WorkflowNode[] = [
     y: 60,
     width: 230,
     height: 95,
-    description: "High-precision non-contact digitizing of physical textures using METIS SynchroLight directional LED illumination and photometric stereo computer vision.",
-    inputs: ["Physical substrate sample (wood, ceramic, textile, stone)"],
-    outputs: ["16-bit color-calibrated TIFF", "3D height/depth relief maps", "Gloss & normal surface reflection maps"],
-    mainComponents: ["PM3D Hawk or DRS scanner", "Motorized optical traverse", "Directional DC LED arrays", "White reference calibration tile"],
-    cgsProducts: ["METIS Light Inspector", "METIS Scan Director"],
-    commonFailures: ["Silicone or dust on white reference tile", "Focal plane distortion on thick samples", "Directional shadow imbalance"],
-    diagnosticQuestions: ["Has shading calibration been run today?", "Is the sample vacuum held flat without edge curling?"],
+    description: "METIS is a family of scanner systems. The products and supported capture functions differ by family and model; this node represents only the optional capture of a physical sample, not a shared scanner architecture.",
+    inputs: ["Physical sample and agreed capture goal"],
+    outputs: ["Files produced by the selected scanner and configured workflow"],
+    mainComponents: ["Model-specific scanner and illumination", "Approved reference and calibration process", "Documented sample setup"],
+    cgsProducts: ["METIS DRS family", "METIS EDS family", "METIS SURF / PM3D family"],
+    commonFailures: ["Sample setup or focus differs from instructions", "Reference or calibration target is damaged or contaminated", "Unexpected capture or calibration result"],
+    diagnosticQuestions: ["Which exact METIS model and software version are installed?", "What result does its documented calibration and capture workflow report?"],
     upstreamNodes: ["node_input"],
     downstreamNodes: ["node_color_prep"],
     relatedLessonSlug: "day-09-metis-scanning-and-material-surface-imaging",
     relatedLessonTitle: "Day 9: METIS Scanning & Surface Imaging",
-    sourceConfidence: "Confirmed METIS Manufacturer Specification",
+    sourceConfidence: "Official METIS family overview; features vary by model",
   },
   {
     id: "node_color_prep",
@@ -99,110 +99,110 @@ const workflowNodes: WorkflowNode[] = [
     y: 160,
     width: 240,
     height: 95,
-    description: "Algorithmic color transformations ensuring contract proof fidelity, production press normalization, or 7-color extended gamut spot-color conversion.",
-    inputs: ["Input PDF or METIS 16-bit scan", "Target press characterization (GRACoL/Fogra)", "Substrate white-point measurement"],
-    outputs: ["DeviceLink-profiled raster PDF", "7-Color ECG separations (CMYK+OGV)", "Certified contract color proof"],
-    mainComponents: ["ORIS DeviceLink Calculation Engine", "Spectral Color Database", "OBA Fluor compensation"],
+    description: "Color-management software may be part of a workflow when configured for the job. Product roles, supported inputs, output, and integrations must be checked against current documentation and the customer's licensed setup.",
+    inputs: ["Approved artwork or image data", "Applicable profiles, device data, and color references"],
+    outputs: ["Color-managed files or proofs according to configured workflow"],
+    mainComponents: ["Defined source and destination conditions", "Current device characterization", "Documented output and comparison method"],
     cgsProducts: ["ORIS COLOR TUNER", "ORIS PRESS MATCHER", "ORIS X GAMUT", "ORIS FLEX PACK"],
-    commonFailures: ["Using coated paper ICC profiles on raw brown kraft corrugated board", "Outdated linearization curves", "Unmanaged spot colors falling outside gamut"],
-    diagnosticQuestions: ["What Delta E threshold was contractually agreed upon?", "Is the proofing device properly linearized with fresh ink limits?"],
+    commonFailures: ["Profile, substrate, or process does not match the job", "Stale or mismatched characterization data", "Unclear spot-color or proof acceptance criteria"],
+    diagnosticQuestions: ["Which ORIS product/version and licensed workflow are in use?", "Do the source, substrate, output profile, and agreed verification method match?"],
     upstreamNodes: ["node_input", "node_metis", "node_feedback"],
     downstreamNodes: ["node_rip"],
     relatedLessonSlug: "day-08-oris-software-ecosystem",
     relatedLessonTitle: "Day 8: ORIS Software Ecosystem in Depth",
-    sourceConfidence: "Confirmed CGS ORIS Specification",
+    sourceConfidence: "Official product overview; confirm feature and version in current documentation",
   },
   {
     id: "node_rip",
     stageNumber: 4,
     title: "4. RIP & Job Preparation",
-    subtitle: "PostScript Rasterization & Screening",
+    subtitle: "Raster Image Processing (where used)",
     category: "rip",
     x: 910,
     y: 160,
     width: 220,
     height: 90,
-    description: "Raster Image Processor translates vector objects and continuous-tone pixels into screened 1-bit or multi-drop (picoliter) dot matrices matching nozzle geometry.",
-    inputs: ["DeviceLink-profiled print PDF", "Media screening resolution (e.g. 720x1200 DPI)", "Drop-size firing tables"],
-    outputs: ["Screened raster swaths", "Carriage firing order buffers", "Encrypted machine code"],
-    mainComponents: ["PostScript/PDF Interpreter", "Halftone Screening Engine", "Gigabit Network Spooler", "Temp Scratch SSD"],
-    cgsProducts: ["CGS ORIS RIP Driver", "Dedicated Dual-NIC Subnet"],
-    commonFailures: ["Scratch disk running out of free space (100% full)", "Buffer underruns causing carriage pauses mid-print", "Jumbo frames MTU mismatch"],
-    diagnosticQuestions: ["Is the printer connected to a dedicated secondary NIC?", "Is USB Selective Suspend disabled on the RIP workstation?"],
+    description: "A configured RIP or controller workflow interprets job data for a particular output device. This general stage is not an assertion that a specific RIP, network topology, format, or integration ships with every product.",
+    inputs: ["Job file and output-device configuration", "Media and print settings from the approved workflow"],
+    outputs: ["Device-specific print data and job status"],
+    mainComponents: ["Customer-selected RIP or controller", "Configured media and output settings", "Supported communications path"],
+    cgsProducts: [],
+    commonFailures: ["Job remains queued or errors before output", "Unexpected output settings or media selection", "Communication interruption between configured systems"],
+    diagnosticQuestions: ["Which application and version generated the job?", "Where does the job stop, and what logs or status messages are available?"],
     upstreamNodes: ["node_color_prep"],
     downstreamNodes: ["node_printer"],
     relatedLessonSlug: "day-06-networking-rips-and-print-jobs",
     relatedLessonTitle: "Day 6: Networking, RIPs, and Print Jobs",
-    sourceConfidence: "Industry Standard & CGS Architecture",
+    sourceConfidence: "General print-workflow concept; RIP and controller depend on configuration",
   },
   {
     id: "node_printer",
     stageNumber: 5,
     title: "5. Industrial Printer (Platinum)",
-    subtitle: "Motion, Negative Pressure & UV Curing",
+    subtitle: "Model-specific printer architecture",
     category: "printer",
     x: 610,
     y: 330,
     width: 240,
     height: 100,
-    description: "High-precision physical deposition: piezoelectric actuators eject micro-drops under controlled meniscus negative pressure, followed by instant UV-LED cure.",
-    inputs: ["Screened raster swath data", "UV ink (CMYK+W+V)", "Substrate (rigid or roll)", "3-phase 208-480V power"],
-    outputs: ["Physically cured, printed substrate", "Carriage position logs"],
-    mainComponents: ["Piezo printheads (Ricoh/Kyocera)", "Negative pressure sub-tank (-3.2 kPa)", "UV-LED lamp arrays", "Vacuum table", "Linear optical encoder"],
-    cgsProducts: ["Platinum Technologies UV-LED Flatbed & Hybrid Platforms"],
-    commonFailures: ["Horizontal banding from missing nozzles or step-feed miscalibration", "Weak negative pressure causing nozzle drool", "Dirty UV quartz windows causing uncured ink"],
-    diagnosticQuestions: ["What does the nozzle test pattern show right now?", "What is the manometer vacuum reading on the sub-tank?"],
+    description: "This conceptual node represents an industrial output device. Platinum printer families and individual configurations can differ in print technology, ink, motion, curing, media handling, utilities, and service procedures.",
+    inputs: ["Supported job data", "Approved media and materials", "Model-specific facility utilities"],
+    outputs: ["Printed output and device status"],
+    mainComponents: ["Model-specific print and motion systems", "Installed ink and curing technology (if applicable)", "Media handling and safety systems"],
+    cgsProducts: ["Platinum Technologies printer families"],
+    commonFailures: ["Output defects with different possible causes", "Media handling or motion symptoms", "Job, configuration, or environmental problems"],
+    diagnosticQuestions: ["What exact model, serial, options, and software version are installed?", "What does the approved model-specific test and service guidance show?"],
     upstreamNodes: ["node_rip"],
     downstreamNodes: ["node_measurement"],
     relatedLessonSlug: "day-04-platinum-printer-architecture-and-subsystems",
     relatedLessonTitle: "Day 4: Platinum Printer Architecture",
-    sourceConfidence: "Confirmed Industrial Printhead & Chassis Spec",
+    sourceConfidence: "Conceptual model only; no model-specific configuration is asserted",
   },
   {
     id: "node_measurement",
     stageNumber: 6,
     title: "6. Inspection & Measurement",
-    subtitle: "Spectrophotometry & Cross-Hatch Adhesion",
+    subtitle: "Inspection against agreed criteria",
     category: "measurement",
     x: 320,
     y: 330,
     width: 230,
     height: 95,
-    description: "Quantitative verification of cured output: measuring color control strips with spectrophotometers (M1 condition) and testing ink adhesion with cross-hatch tape.",
-    inputs: ["Cured printed board", "Color control wedge (e.g. Fogra MediaWedge)", "Calibrated spectrophotometer (i1Pro3)"],
-    outputs: ["Delta E 2000 verification report", "ASTM D3359 adhesion rating", "Pass/Fail certification label"],
-    mainComponents: ["Handheld or automated spectrophotometer", "ORIS Certified software", "Cross-hatch cutter & 3M 610 tape"],
-    cgsProducts: ["ORIS CERTIFIED & EVALUATE"],
-    commonFailures: ["Measuring before ink completes dark reaction (wait 10 mins)", "Using M0 instead of M1 on OBA-brightened paper", "Fingerprint smudges on test wedge"],
-    diagnosticQuestions: ["Does ΔE00 meet the required customer tolerance (< 1.5)?", "Did the cross-hatch tape test pull off any ink?"],
+    description: "Compare output with the customer's documented acceptance criteria using the specified instrument, target, method, substrate, and measurement condition. No universal color or adhesion threshold is implied.",
+    inputs: ["Output and agreed reference", "Specified measurement condition and procedure", "Customer acceptance criteria"],
+    outputs: ["Recorded observations and measurements", "Acceptance, rework, or escalation decision"],
+    mainComponents: ["Suitable calibrated instrument", "Applicable test target and procedure", "Documented acceptance limits"],
+    cgsProducts: ["ORIS CERTIFIED", "ORIS EVALUATE"],
+    commonFailures: ["Comparing measurements taken under different conditions", "Using an invalid or out-of-date target", "Applying an assumed tolerance not agreed with the customer"],
+    diagnosticQuestions: ["Which instrument condition and target are specified?", "What exact acceptance limit and sampling plan were agreed?"],
     upstreamNodes: ["node_printer"],
     downstreamNodes: ["node_feedback", "node_output"],
     relatedLessonSlug: "day-07-color-science-icc-profiles-and-delta-e",
     relatedLessonTitle: "Day 7: Color Science & Delta E",
-    sourceConfidence: "ISO 13655 / ISO 12647-7 Verified",
+    sourceConfidence: "General measurement concept; no universal acceptance criteria",
   },
   {
     id: "node_feedback",
     stageNumber: 7,
     title: "7. Closed-Loop Feedback",
-    subtitle: "Dynamic Recalibration & Curve Updates",
+    subtitle: "Evidence-based review and next steps",
     category: "feedback",
     x: 40,
     y: 330,
     width: 220,
     height: 90,
-    description: "Automated corrective loop: when Delta E exceeds tolerance, measurement data feeds back to update device linearization curves without manual trial-and-error.",
-    inputs: ["Measured spectral L*a*b* patch data", "Tolerance deviation reports"],
-    outputs: ["Updated linearization curves", "Iterative DeviceLink compensation"],
-    mainComponents: ["ORIS Automated Iteration Loop", "RIP Profile Manager"],
-    cgsProducts: ["ORIS PRESS MATCHER (Closed Loop)", "ORIS COLOR TUNER"],
-    commonFailures: ["Re-profiling when simple linearization was required", "Feeding bad measurement scans into the calibration engine"],
-    diagnosticQuestions: ["Was the printer thoroughly warmed up before scanning curves?", "Are all nozzles firing prior to calibration?"],
+    description: "A conceptual service loop: compare evidence with the original complaint, review configuration and prior changes, then choose a documented next test or safe escalation. This does not imply an automated or direct product integration.",
+    inputs: ["Recorded test results", "Customer acceptance criteria", "System configuration and work history"],
+    outputs: ["Revised diagnostic hypothesis", "Authorized follow-up test or escalation"],
+    mainComponents: ["Review and evidence correlation", "Documented change control", "Safe escalation path"],
+    cgsProducts: [],
+    commonFailures: ["Changing multiple variables at once", "Treating correlation as proof of cause", "Restarting without verifying acceptance and safety"],
+    diagnosticQuestions: ["What evidence changed after the last controlled test?", "Is the proposed next step authorized and documented?"],
     upstreamNodes: ["node_measurement"],
     downstreamNodes: ["node_color_prep"],
     relatedLessonSlug: "day-02-complete-digital-imaging-workflow",
     relatedLessonTitle: "Day 2: Digital Imaging Workflow",
-    sourceConfidence: "Confirmed CGS Closed-Loop Methodology",
+    sourceConfidence: "Conceptual service-feedback loop; automation is not implied",
   },
 ];
 
@@ -258,11 +258,14 @@ export default function SystemsMapPage() {
             <span>Interactive Systems Architecture</span>
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight mt-1">
-            Complete CGS ORIS Imaging & Printing Workflow
+            Interactive Imaging & Service Workflow Map
           </h1>
           <p className="text-xs text-slate-400 max-w-2xl">
-            Vector-rendered interactive systems map. Select nodes to inspect functional operations, inputs/outputs, failure modes, diagnostic questions, and CGS ORIS / METIS / Platinum integration.
+            Explore example workflow stages, questions, and evidence. This is an independent educational concept—not a proprietary schematic, a complete system architecture, or a claim that products are integrated in this sequence. Product functions and configurations vary; use current model-specific documentation.
           </p>
+          <a href="/lessons/day-01-cgs-oris-and-field-service" className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-teal-300 hover:text-white">
+            <ArrowRight className="h-3.5 w-3.5 rotate-180" aria-hidden="true" /> Return to Day 1
+          </a>
         </div>
 
         {/* Controls */}
@@ -327,8 +330,8 @@ export default function SystemsMapPage() {
         {/* Vector SVG Canvas (7 cols on lg) */}
         <div className="lg:col-span-7 bg-[#070C14] border border-slate-800 rounded-xl p-4 overflow-hidden relative shadow-2xl">
           <div className="text-[10px] font-mono text-slate-500 mb-2 flex items-center justify-between">
-            <span>INTERACTIVE WORKFLOW DIAGRAM • CLICK ANY NODE</span>
-            <span>EDUCATIONAL CONCEPTUAL MODEL</span>
+            <span>INTERACTIVE CONCEPTUAL MAP • SELECT ANY NODE</span>
+            <span>NOT A PRODUCT INTEGRATION SCHEMATIC</span>
           </div>
 
           <div className="overflow-x-auto">
@@ -475,6 +478,15 @@ export default function SystemsMapPage() {
                     <g
                       key={node.id}
                       onClick={() => setSelectedNode(node)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          setSelectedNode(node);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Select ${node.title}`}
                       className="cursor-pointer transition-all duration-200"
                       opacity={isHighlighted ? 1 : 0.25}
                     >
@@ -553,7 +565,7 @@ export default function SystemsMapPage() {
                         fontFamily="monospace"
                         fontWeight="semibold"
                       >
-                        {node.cgsProducts[0] || "CGS / OEM Engine"}
+                        {node.cgsProducts[0] || "Conceptual stage"}
                       </text>
                     </g>
                   );
@@ -613,7 +625,7 @@ export default function SystemsMapPage() {
               {/* Main Subsystems & CGS Products */}
               <div className="space-y-2 text-xs">
                 <div className="text-[10px] uppercase font-mono text-slate-400 font-bold">
-                  Core Technologies & Products
+                  Conceptual Components & Related Product Names
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {selectedNode.cgsProducts.map((p, idx) => (

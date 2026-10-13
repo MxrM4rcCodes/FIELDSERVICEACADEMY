@@ -34,7 +34,7 @@ export default function AdminPage() {
       const res = await fetch("/api/admin");
       if (!res.ok) {
         if (res.status === 403) {
-          setError("Access Denied: You must be logged in as an Administrator (e.g. admin@cgs-oris.academy). Use the top-right Quick Role Switcher to switch to Admin mode.");
+          setError("Administrator access required. Learner accounts cannot change their own role. Sign in with an account provisioned by the administrator.");
         } else {
           setError("Failed to load admin data.");
         }
@@ -85,32 +85,6 @@ export default function AdminPage() {
     }
   };
 
-  const handleSwitchToAdmin = async () => {
-    try {
-      setLoading(true);
-      if (typeof window !== "undefined") {
-        localStorage.setItem("cgs_active_role", "admin");
-      }
-      const res = await fetch("/api/auth/switch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: "admin" }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (data.token && typeof window !== "undefined") {
-        localStorage.setItem("cgs_session_token", data.token);
-      }
-      try {
-        document.cookie = "cgs_user_role=admin; path=/; max-age=2592000; SameSite=None; Secure";
-        if (data.token) {
-          document.cookie = `cgs_session_token=${data.token}; path=/; max-age=2592000; SameSite=None; Secure`;
-        }
-      } catch (e) {}
-      window.location.reload();
-    } catch (e: any) {
-      window.location.href = "/api/auth/switch?role=admin&redirect=/admin";
-    }
-  };
 
   if (loading) {
     return (
@@ -132,18 +106,14 @@ export default function AdminPage() {
           {error}
         </p>
         <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-          <button
-            onClick={handleSwitchToAdmin}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center justify-center space-x-2 shadow-lg shadow-purple-600/30 transition-all"
-          >
-            <Shield className="w-4 h-4" />
-            <span>Switch to Administrator (Sarah Jenkins) Mode</span>
-          </button>
           <a
             href="/"
             className="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold text-center"
           >
-            Return to Candidate Dashboard
+            Return to Dashboard
+          </a>
+          <a href="/login" className="w-full sm:w-auto px-4 py-2.5 rounded-lg border border-slate-700 text-slate-200 hover:bg-slate-800 text-xs font-semibold text-center">
+            Sign in as an authorized administrator
           </a>
         </div>
       </div>
@@ -165,7 +135,7 @@ export default function AdminPage() {
             Curriculum Administration Console
           </h1>
           <p className="text-xs text-slate-400">
-            Server-enforced administrative oversight. Revise lessons, edit quiz questions, manage scenarios, audit user accounts, and track content revisions.
+            Server-checked administrator access. Review platform counts, learner accounts, and revision history; edit lesson titles, summaries, and estimated study time.
           </p>
         </div>
 

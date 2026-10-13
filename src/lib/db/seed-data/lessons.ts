@@ -40,8 +40,8 @@ export const seedTracks = [
     id: "trk_bootcamp",
     slug: "bootcamp",
     title: "Track A: 3-Day Interview Bootcamp",
-    subtitle: "High-intensity 8-hour sprint for immediate interview readiness",
-    description: "Designed specifically for candidates with an upcoming interview. Focuses on core CGS ORIS business lines, systematic inkjet fault isolation, safety principles, and STAR interview delivery.",
+    subtitle: "A focused three-day interview-preparation plan",
+    description: "A short, grouped study path through product research, safe fault reasoning, and honest interview practice. Six lessons are grouped across three bootcamp days.",
     total_days: 3,
     estimated_hours: 8.0,
     sort_order: 1,
@@ -50,8 +50,8 @@ export const seedTracks = [
     id: "trk_course_14",
     slug: "course_14",
     title: "Track B: Full 14-Day Technical Course",
-    subtitle: "Comprehensive industrial printing systems and field service curriculum",
-    description: "A complete professional training program covering Platinum printer architecture, METIS scanning optics, ORIS color management, LOTO safety, advanced diagnostic isolation, and field commissioning.",
+    subtitle: "Self-paced industrial imaging and field-service curriculum",
+    description: "Fourteen instructional days covering color workflows, printer and scanner concepts, safety, diagnosis, documentation, and interview practice. Product-specific settings and service actions must be verified in current documentation.",
     total_days: 14,
     estimated_hours: 21.0,
     sort_order: 2,
@@ -59,2454 +59,995 @@ export const seedTracks = [
 ];
 
 export const seedModules = [
-  { id: "mod_foundation", title: "Module 1: Foundations & Architecture", slug: "foundations", category: "systems", sortOrder: 1 },
-  { id: "mod_hardware_safety", title: "Module 2: Hardware, Motion & Safety", slug: "hardware-safety", category: "hardware", sortOrder: 2 },
-  { id: "mod_imaging_color", title: "Module 3: Color Science & Workflow Software", slug: "color-workflow", category: "color", sortOrder: 3 },
-  { id: "mod_scanning", title: "Module 4: METIS Material Scanning", slug: "metis-scanning", category: "scanning", sortOrder: 4 },
-  { id: "mod_field_ops", title: "Module 5: Field Operations & Advanced Diagnostics", slug: "field-operations", category: "operations", sortOrder: 5 },
-  { id: "mod_interview", title: "Module 6: Professional Mastery & Interview Simulation", slug: "interview-mastery", category: "interview", sortOrder: 6 },
+  { id: "mod_foundation", title: "Module 1: Foundations & Workflow", slug: "foundations", category: "systems", sortOrder: 1 },
+  { id: "mod_hardware_safety", title: "Module 2: Equipment Concepts & Safety", slug: "hardware-safety", category: "hardware", sortOrder: 2 },
+  { id: "mod_imaging_color", title: "Module 3: Color Science & Software", slug: "color-workflow", category: "color", sortOrder: 3 },
+  { id: "mod_scanning", title: "Module 4: Scanner Families & Imaging", slug: "metis-scanning", category: "scanning", sortOrder: 4 },
+  { id: "mod_field_ops", title: "Module 5: Field Operations & Diagnosis", slug: "field-operations", category: "operations", sortOrder: 5 },
+  { id: "mod_interview", title: "Module 6: Documentation & Interview Practice", slug: "interview-mastery", category: "interview", sortOrder: 6 },
 ];
 
+function section(sectionTitle: string, contentMarkdown: string, blockType = "teaching"): SeedContentBlock {
+  return { sectionTitle, contentMarkdown, blockType };
+}
+
+let questionIndex = 0;
+function question(
+  text: string,
+  domain: string,
+  answer: string,
+  rationale: string,
+  distractors: Array<{ text: string; explanation: string }>,
+): SeedQuestion {
+  const choices = [
+    { text: answer, isCorrect: true, explanation: rationale },
+    ...distractors.map((option) => ({ ...option, isCorrect: false })),
+  ];
+  const correct = choices.shift()!;
+  choices.splice(questionIndex++ % choices.length, 0, correct);
+  return { text, domain, explanation: rationale, options: choices };
+}
+
+const portfolioOverview = "https://www.cgs-oris.com/en/software/";
+const metisOverview = "https://www.cgs-oris.com/en/metis-scanner";
+const metisEdsGamma = "https://www.metis-group.com/product/eds-gamma";
+const osha1910147 = "https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.147";
+const iso13655 = "https://www.iso.org/standard/65430.html";
+const iso126477 = "https://www.iso.org/standard/66426.html";
+const ciede2000 = "https://doi.org/10.1002/col.20070";
+
 export const seedLessons: SeedLesson[] = [
-  // DAY 1
   {
     dayNumber: 1,
     bootcampDayNumber: 1,
-    title: "CGS ORIS and the Field Service Mission",
+    title: "CGS ORIS Product Families and Field Service",
     slug: "day-01-cgs-oris-and-field-service",
-    summary: "Master the structure of CGS ORIS Americas, the Plymouth MN operations hub, core product portfolios (ORIS, METIS, Platinum), and the daily reality of an FST.",
-    estimatedMinutes: 90,
+    summary: "Orient to the independent product families in the learning brief, distinguish documented facts from assumptions, and practice a safe, evidence-led field-service conversation.",
+    estimatedMinutes: 75,
     competencyDomain: "company_interview",
     objectives: [
-      "Articulate CGS ORIS Americas' market position in high-end proofing, color management, industrial flatbed printing, and scanning.",
-      "Differentiate between ORIS software, METIS high-resolution fine-art/decor scanners, and Platinum industrial printer product lines.",
-      "Define the responsibilities of a Field Service Technician across pre-shipment, commissioning, on-site diagnostics, and customer training.",
-      "Formulate a compelling 60-90 second personal elevator pitch connecting past technical experience to the Plymouth MN field service team."
+      "Distinguish the ORIS software portfolio from METIS scanner families and the Platinum printer context named in the course brief.",
+      "Explain why product names alone do not prove a particular feature, configuration, or integration.",
+      "Outline a general service-call sequence: clarify, assess safety, gather evidence, act within authorization, verify, document, and escalate.",
+      "Prepare an honest introduction that connects real transferable experience to a current job posting without inventing employer facts.",
     ],
-    prerequisites: ["General understanding of technical field support", "Basic mechanical or electrical background"],
+    prerequisites: ["No prior product-specific service experience required", "Bring a real example of a technical problem you have solved"],
     sourceRef: {
-      title: "CGS ORIS Americas Field Service Role Specification",
-      citation: "CGS ORIS Corporate Overview, Plymouth MN Operations 2024-2026",
-      confidenceLevel: "confirmed_spec",
-      notes: "Corporate structure, Plymouth headquarters demo/bench testing facility, and multi-vendor portfolio distribution."
+      title: "CGS ORIS public product overviews and learner-provided course scope",
+      citation: `${portfolioOverview}; ${metisOverview}; Platinum is named in the learner-provided course scope, not treated here as a model-specific specification.`,
+      confidenceLevel: "public_overview_and_user_context",
+      notes: "Public pages identify portfolio names and broad scope only. This lesson does not assert current hiring requirements, location, ownership, service duties, model features, or product integration. Check the current employer posting before an interview.",
     },
     contentBlocks: [
-      {
-        sectionTitle: "Company History and Global Footprint",
-        blockType: "teaching",
-        contentMarkdown: `### The Evolution of CGS Publishing Technologies to CGS ORIS
+      section("Product names: useful orientation, not a service specification", `The public CGS ORIS software overview lists products including COLOR TUNER, FLEX PACK, X GAMUT, PRESS MATCHER, CERTIFIED, and EVALUATE. Treat that as a portfolio list—not a promise that every product is included in every installation or that a particular task is supported in every version.
 
-Founded in 1985 in Germany (CGS Publishing Technologies International GmbH), CGS ORIS transformed the commercial prepress industry by introducing software-based contract color proofing. Before digital inkjet proofing, print houses spent hundreds of dollars creating chemical laminate proofs (such as DuPont Matchprint) for every press run. CGS revolutionized this with algorithmic color conversion, enabling standard inkjet printers to emulate multimillion-dollar offset, gravure, and flexographic presses.
+The public METIS overview identifies multiple scanner families. The course brief also names Platinum industrial printers. These are distinct product contexts. A product name does not tell you the serial-specific options, installed software, service authorization, or the customer's workflow.
 
-### CGS ORIS Americas Operations
-In the Americas, operations are headquartered in **Plymouth, Minnesota**. This facility serves as:
-1. **The Technology Demonstration Center**: Hosting prospective commercial, packaging, and industrial decor clients.
-2. **Pre-Shipment Staging & Bench Testing Facility**: Where Platinum flatbed printers and METIS scanners are uncreated, assembled, powered, calibrated, and subjected to burn-in tests prior to customer delivery.
-3. **Training & Technical Support Depot**: Housing spare parts inventory, calibration instrumentation, and the technical escalation team.
+For a real service visit or interview, record the exact model and version from reliable records and consult the applicable current documentation. Never convert an educational example into an employer claim.`),
+      section("A field-service mindset", `A sound general service conversation starts by listening and clarifying what the customer observed, when it began, what changed, and what outcome is needed. Separate the customer's description from your own hypothesis.
 
-### Critical Operating Principle
-*Do not treat CGS ORIS, METIS, and Platinum as one single homogeneous machine.* CGS ORIS Americas acts as the premier technology integration partner. They combine:
-- Proprietary ORIS color management software.
-- High-precision Italian-manufactured METIS fine-art and decor surface scanners.
-- Platinum Technologies industrial UV-LED and hybrid printing platforms.
-Customers may purchase an entire turnkey line or utilize individual components within existing press environments.`
-      },
-      {
-        sectionTitle: "The Field Service Technician Role: Core Responsibilities",
-        blockType: "teaching",
-        contentMarkdown: `### The Four Pillars of the Field Service Technician (FST)
+Before touching equipment, assess the work area, task scope, authorization, and hazards. If a hazard is uncontrolled or the applicable procedure is unknown, pause and obtain competent site or manufacturer guidance. Use controlled observations and approved tests to distinguish possible causes; change only what is authorized and supported by evidence.
 
-As a Field Service Technician for CGS ORIS Americas, you are the face of the company in demanding production environments:
+Finish by checking against agreed acceptance criteria, explaining unresolved uncertainty, recording what was and was not done, and arranging a clear follow-up or escalation.`),
+      section("Conceptual map: follow a workflow without assuming integration", `A general imaging workflow can include requirements and source material, optional scanning, color management, a configured RIP or controller, an output device, inspection, and a review loop. This is a teaching model, not a proprietary schematic or a required product chain.
 
-1. **Pre-Shipment Testing & Staging (Plymouth, MN)**
-   - Uncrating crated chassis, inspecting for transit damage, verifying power supplies and transformer taps.
-   - Performing initial mechanical leveling, cable harness routing, and firmware flashing.
-   - Running factory burn-in test patterns and nozzle health certifications before re-packing for customer dispatch.
+For each stage ask: What enters? What output is expected? Which system actually performs this step? Which file, version, target, or measured result can confirm it? The systems map linked on this page makes these questions interactive. The stages and links vary by customer configuration.` , "visual_explanation"),
+      section("Practice: a neutral service-call opening", `Prompt: A customer says, “The print no longer matches the approved target.” Start with open questions rather than naming a part.
 
-2. **On-Site Installation and Commissioning**
-   - Facility environmental audit: verifying dedicated electrical supplies (e.g. 208-240V 3-phase), compressed air filtration, HVAC stability (68-75°F, 40-60% RH).
-   - Precision mechanical alignment: gantry squaring, carriage height leveling, vacuum bed flatness dial-indicator verification.
-   - Ink system priming: negative pressure meniscus setup, purge cycles, UV curing lamp irradiance verification.
-   - RIP integration and network commissioning.
+1. Ask what changed, when the difference first appeared, and whether it affects all jobs or one material.
+2. Ask which target, output file, substrate, device configuration, and acceptance criteria are relevant.
+3. Confirm the site is safe, your authorization, and which records or approved tests are available.
+4. State a next step that gathers evidence without promising a repair or a result prematurely.` , "interactive_practice"),
+      section("Summary and interview preparation", `Keep three distinctions clear: a company portfolio page is not a job description; a product family is not a complete specification; and a conceptual workflow is not proof of a particular integration.
 
-3. **Diagnostic Troubleshooting and Emergency Escalation**
-   - Responding to down-machine events on customer production floors.
-   - Systematic fault isolation across electrical, hydraulic/ink supply, pneumatic, mechanical motion, and software domains.
-   - Safe execution under OSHA Lockout/Tagout (LOTO) protocols.
-
-4. **Operator Training & Relationship Management**
-   - Training client operators on daily preventive maintenance (capping station swabs, wiper blade cleaning, negative pressure monitoring).
-   - Documenting service calls meticulously in formal service tickets to track recurring failure modes.`
-      },
-      {
-        sectionTitle: "Travel, Autonomy, and Trade Show Deployments",
-        blockType: "teaching",
-        contentMarkdown: `### The Realities of Industrial Field Travel
-The FST position typically involves **50% to 75% travel** across North America, occasionally including international training visits. 
-
-Key attributes required for success:
-- **Independent Problem Solving**: You will often be alone on a client's factory floor at 8:00 PM with an expensive production line halted. You must remain calm, adhere to structured diagnostic isolation, and avoid guessing.
-- **Logistics & Inventory Discipline**: Keeping a clean vehicle/flight kit with calibrated multi-meters, dial test indicators, torque wrenches, lint-free swabs, optical magnifiers, and emergency spare boards.
-- **Trade Show & Exhibition Support**: Setting up high-profile live demonstration booths at events like PRINTING United, ISA Sign Expo, and Coverings. In these environments, machines must run flawlessly under harsh temporary power and high ambient foot traffic.`
-      },
-      {
-        sectionTitle: "Annotated Visual Explanation: The Plymouth Support Ecosystem",
-        blockType: "visual_explanation",
-        contentMarkdown: `### Functional Flow: How Field Service Connects to Engineering
-
-\`\`\`
-[ Customer Site / Factory Floor ]
-       │
-       ▼ (Service Request: Uncured UV Ink / Banding)
-[ Level 1: Remote Triage (Plymouth Depot) ]
-       │
-       ├── Case Resolved via Config/File Correction? ──► [ Closed Ticket ]
-       ▼ (No: Hardware or Complex Fault Identified)
-[ Level 2: FST Dispatched with Target Spares & Spec Sheet ]
-       │
-       ├── Site Safety & Environmental Check
-       ├── Physical Diagnostic Tree Execution
-       ├── Hardware Repair / Alignment / Recalibration
-       ▼
-[ Level 3: Escalation to Factory Engineering (Germany / Italy / OEM) ]
-       │ (When firmware bugs or unresolvable board logic occur)
-       ▼
-[ Verification & Customer Acceptance Signoff ]
-\`\`\`
-
-**Key Takeaway**: The technician is never completely isolated; you are supported by technical specialists in Plymouth and OEM engineering partners abroad, provided you supply precise, data-driven diagnostic logs.`
-      },
-      {
-        sectionTitle: "Realistic Field Case Example",
-        blockType: "field_example",
-        contentMarkdown: `### Field Case #101: The \"Defective\" UV Lamp Call
-**Location:** Packaging Mockup Plant, Chicago, IL.  
-**Complaint:** Customer called Plymouth dispatch stating their Platinum UV flatbed was failing to cure ink on polypropylene sheets, leaving tacky surfaces. Customer demanded an emergency $4,000 UV LED lamp head replacement.
-
-**FST Action On Site:**
-1. Performed LOTO, verified lamp power harness connections.
-2. Rather than immediately opening the sealed lamp assembly, the technician measured the quartz protective window. It was coated with a heavy film of atomized aerosol ink mist caused by the customer disabling the carriage vacuum exhaust.
-3. Cleaned the quartz window with optical-grade isopropyl alcohol and measured UV irradiance using a calibrated radiometer. Output jumped from 180 mW/cm² back to 850 mW/cm² (normal operating spec).
-4. Re-enabled the exhaust vacuum and trained the lead operator on daily quartz window inspection.
-
-**Result:** Solved in 45 minutes with zero parts cost. Customer saved $4,000 and avoided 3 days of machine downtime. Exemplary field service documentation filed.`
-      },
-      {
-        sectionTitle: "Interactive Practice: 60-90 Second Elevator Pitch Builder",
-        blockType: "interactive_practice",
-        contentMarkdown: `### Exercise: Constructing Your Interview Introduction
-
-When asked *"Tell us about yourself and why you want to be a Field Service Technician for CGS ORIS Americas,"* structure your answer in four parts:
-
-1. **The Hook (Past Foundation):** Your background in electromechanical systems, industrial maintenance, print technology, or instrumentation.
-2. **The Transferable Skill (Diagnostic Method):** How you approach complex, intermittent problems using systematic root-cause isolation rather than guesswork.
-3. **The Customer/Field Focus:** Comfort with independent travel, working calmly under production pressure, and clear communication with plant managers.
-4. **The CGS ORIS Connection:** Why CGS ORIS—specifically their unique intersection of high-precision METIS scanning, advanced ORIS color management, and Platinum industrial hardware.`
-      },
-      {
-        sectionTitle: "Summary, Review & Printable Reference",
-        blockType: "summary_review",
-        contentMarkdown: `### Key Takeaways for Day 1
-- CGS ORIS Americas operates out of **Plymouth, Minnesota**.
-- Three primary hardware and software pillars: **ORIS Software** (Color Tuner, Press Matcher, X Gamut), **METIS Scanners** (PM3D Hawk, DRS, EDS), and **Platinum Technologies Printers** (UV-LED flatbed/hybrid).
-- FST work balances technical precision (leveling, optics, hydraulics, electrical) with customer de-escalation and safety discipline.
-- Always perform evidence-based diagnosis before replacing expensive assemblies.`
-      }
+For an interview, research current primary sources, bring truthful examples from your own work, and describe your reasoning. If you have not serviced a particular printer or scanner, say so and explain how you would learn its approved procedures. The systems map is optional practice; continue to the knowledge check when you are ready.`, "summary_review"),
     ],
     questions: [
-      {
-        text: "Where is CGS ORIS Americas headquartered, and what primary operational activities take place there?",
-        domain: "company_interview",
-        explanation: "CGS ORIS Americas is based in Plymouth, MN, where they maintain a demonstration center, pre-shipment bench testing/staging depot, and technical training facilities.",
-        options: [
-          { text: "Plymouth, Minnesota; housing demonstration, staging, pre-shipment testing, and technical support.", isCorrect: true, explanation: "Correct. Plymouth MN is the core operations center for CGS ORIS Americas." },
-          { text: "Frankfurt, Germany; handling worldwide software distribution only.", isCorrect: false, explanation: "Germany is the global corporate origin, but Americas operations are in Plymouth, MN." },
-          { text: "Atlanta, Georgia; acting solely as a remote call center.", isCorrect: false, explanation: "Incorrect. CGS ORIS Americas is in Plymouth, MN." },
-          { text: "Chicago, Illinois; manufacturing heavy industrial steel gantry frames.", isCorrect: false, explanation: "Incorrect. Platinum frames are built by manufacturing partners, not manufactured in Chicago." }
-        ]
-      },
-      {
-        text: "Which statement accurately describes the relationship between CGS ORIS, METIS, and Platinum Technologies?",
-        domain: "company_interview",
-        explanation: "CGS ORIS Americas integrates and distributes proprietary ORIS color management software alongside METIS high-resolution scanning hardware and Platinum industrial printing systems.",
-        options: [
-          { text: "Every METIS scanner, ORIS software package, and Platinum printer operates as a single mandatory, inseparable machine.", isCorrect: false, explanation: "Incorrect. The three product lines address distinct workflows and can be purchased or integrated independently." },
-          { text: "CGS ORIS Americas acts as an integration and distribution partner, combining proprietary ORIS software with METIS scanning hardware and Platinum printing platforms.", isCorrect: true, explanation: "Correct. They serve overlapping and independent markets with tailored combinations." },
-          { text: "METIS owns Platinum Technologies, and CGS ORIS is purely an outsourced software reseller with no technical field support.", isCorrect: false, explanation: "Incorrect. CGS ORIS provides full hands-on technical field service." },
-          { text: "Platinum printers can only print images scanned on METIS scanners through a closed, proprietary file format.", isCorrect: false, explanation: "Incorrect. Standard open formats (TIFF, PDF) and standard RIP architectures are utilized." }
-        ]
-      },
-      {
-        text: "A customer reports that a newly delivered Platinum flatbed printer has poor print quality. What is the FST's FIRST responsibility upon arrival?",
-        domain: "hardware_safety",
-        explanation: "Before touching machine components or assuming a component is broken, the technician must verify site environmental conditions, electrical safety, and establish observable baseline symptoms.",
-        options: [
-          { text: "Immediately replace all printheads under factory warranty.", isCorrect: false, explanation: "Replacing printheads without diagnostic evidence is costly, wasteful, and often fails to fix the root cause." },
-          { text: "Perform a safety assessment, verify site environmental conditions (power, temperature, humidity), and run a controlled test print to observe baseline symptoms.", isCorrect: true, explanation: "Correct. Controlled baseline observation and environmental verification must precede any hardware intervention." },
-          { text: "Inform the customer that their artwork file is defective and leave the site.", isCorrect: false, explanation: "Unprofessional and unsupported without running standardized diagnostic test files." },
-          { text: "Bypass the carriage safety interlocks to watch the nozzles fire during high-speed printing.", isCorrect: false, explanation: "Severe safety violation. Bypassing interlocks creates severe mechanical and UV radiation hazards." }
-        ]
-      },
-      {
-        text: "What percentage of travel should an FST typically anticipate in this role, and what is the primary operational mode?",
-        domain: "company_interview",
-        explanation: "The role demands approximately 50% to 75% regional and national travel with high operational autonomy at customer production facilities.",
-        options: [
-          { text: "100% remote desk support from a home office with no field travel.", isCorrect: false, explanation: "Incorrect. Field service requires physical on-site deployment." },
-          { text: "50% to 75% travel across customer facilities, trade shows, and staging deployments, requiring strong independent problem-solving.", isCorrect: true, explanation: "Correct. Travel and autonomous problem-solving are central to the position." },
-          { text: "Exclusively local travel within a 10-mile radius of Plymouth, MN.", isCorrect: false, explanation: "Incorrect. CGS ORIS Americas covers clients across North America." },
-          { text: "Travel only occurs if a major customer files a lawsuit.", isCorrect: false, explanation: "Incorrect. Routine installations, maintenance, and scheduled visits comprise the standard workflow." }
-        ]
-      },
-      {
-        text: "During a pre-shipment staging procedure in Plymouth, MN, which of the following is considered an essential validation task?",
-        domain: "customer_docs",
-        explanation: "Pre-shipment staging requires verifying mechanical squaring, leveling, electrical supply tolerances, firmware integrity, and running factory burn-in test patterns.",
-        options: [
-          { text: "Disassembling the gantry completely and shipping it in loose bags.", isCorrect: false, explanation: "Incorrect and absurd." },
-          { text: "Verifying mechanical alignment, electrical bus tolerances, firmware updates, and running extended burn-in diagnostic test prints.", isCorrect: true, explanation: "Correct. Staging ensures the machine leaves Plymouth in 100% verified operational condition." },
-          { text: "Signing off the machine without uncrating to save labor hours.", isCorrect: false, explanation: "Dangerous failure of quality assurance." },
-          { text: "Refilling ink tanks with standard tap water to test nozzle hydraulics.", isCorrect: false, explanation: "Catastrophic. Water can destroy industrial solvent or UV printheads and cause corrosion." }
-        ]
-      }
-    ]
+      question("Which statement best describes what a product-overview page can establish?", "company_interview", "It can identify publicly listed products and broad portfolio context, but not prove the installed configuration or exact service procedure.", "Public overviews help orient the learner; model-, version-, and customer-specific claims need appropriate current documentation.", [
+        { text: "It proves that every customer owns all listed products and uses them in one integrated chain.", explanation: "An overview does not establish an individual customer's licenses or connections." },
+        { text: "It replaces the machine's current service and safety manuals.", explanation: "A high-level product page is not a model-specific service procedure." },
+        { text: "It is a current job posting that defines hiring requirements.", explanation: "Product pages and employment postings serve different purposes." },
+      ]),
+      question("What is the best first response to an unclear customer report?", "company_interview", "Clarify the symptom, timing, scope, recent changes, and agreed outcome before selecting a test.", "A precise customer description helps choose an evidence-based and proportionate next step.", [
+        { text: "Promise a specific part replacement so the customer knows the visit will be quick.", explanation: "That commits to an unsupported diagnosis before evidence is gathered." },
+        { text: "Assume the newest installed component is the cause.", explanation: "A recent change is a clue, not proof of causation." },
+        { text: "Ask the customer to bypass a safety device to reproduce the symptom.", explanation: "Safety devices must not be defeated to obtain a reproduction." },
+      ]),
+      question("How should a candidate handle a company fact that is not confirmed by a current source?", "company_interview", "Do not present it as fact; check a current primary source or phrase the uncertainty honestly.", "Accurate interview preparation distinguishes verified employer information from assumptions.", [
+        { text: "Repeat it confidently because it appears in an old training example.", explanation: "An old or fictional example is not reliable current evidence." },
+        { text: "Invent a plausible detail to make the answer sound specific.", explanation: "Fabricated company claims undermine credibility." },
+        { text: "Attribute it to the manufacturer without checking.", explanation: "Attribution does not make an unsupported claim reliable." },
+      ]),
+      question("What is the role of the systems map in this course?", "company_interview", "It is an interactive conceptual model for asking workflow questions, not a product schematic or proof of integration.", "The map supports learning while explicitly separating the educational model from actual installed architectures.", [
+        { text: "It is an official wiring diagram for every printer and scanner.", explanation: "The map contains no proprietary or model-specific wiring information." },
+        { text: "It proves that every job passes through the same seven systems.", explanation: "Customer workflows and equipment configurations vary." },
+        { text: "It confirms that a symptom originates in the stage nearest the output.", explanation: "A workflow stage is not a diagnosis." },
+      ]),
+      question("Which interview introduction is most credible?", "company_interview", "A concise, truthful example of relevant experience, diagnostic method, safety mindset, and customer communication.", "A candidate can connect transferable skills without claiming experience they do not have.", [
+        { text: "A story claiming hands-on repairs on models the candidate has never used.", explanation: "Fabricated experience is not a credible transferable-skills answer." },
+        { text: "A memorized list of unverified company locations and travel percentages.", explanation: "Current role details should come from the current posting or employer." },
+        { text: "A promise to replace parts quickly whenever a customer is under pressure.", explanation: "Pressure does not justify unsupported or unsafe actions." },
+      ]),
+    ],
   },
-
-  // DAY 2
   {
     dayNumber: 2,
     bootcampDayNumber: 1,
-    title: "The Complete Digital Imaging and Printing Workflow",
+    title: "Digital Imaging and Print Workflow",
     slug: "day-02-complete-digital-imaging-workflow",
-    summary: "Trace the full lifecycle of an image: from METIS optical capture or digital PDF through ORIS color management, RIP rasterization, industrial printing, and spectrophotometric verification.",
-    estimatedMinutes: 90,
+    summary: "Trace a general digital-image workflow and learn to distinguish file, color-management, RIP/controller, device, and verification questions without assuming a particular integration.",
+    estimatedMinutes: 75,
     competencyDomain: "color_oris",
     objectives: [
-      "Diagram the complete production sequence from raw physical specimen to final cured output.",
-      "Identify the distinct roles of CGS ORIS software applications (Color Tuner, Press Matcher, X Gamut) within the pipeline.",
-      "Explain how a Raster Image Processor (RIP) translates vector and continuous-tone pixels into screened 1-bit or multi-drop printhead firing instructions.",
-      "Trace the closed-loop feedback mechanism from post-cure spectrophotometer readings back into device color profiles."
+      "Map common stages from job requirements to output verification.",
+      "Distinguish source data, color transformation, RIP/controller processing, and physical output.",
+      "Identify what configuration records and reference data should be confirmed before interpreting a color complaint.",
+      "Describe a controlled comparison that preserves the customer's agreed target and material.",
     ],
-    prerequisites: ["Day 1 overview of CGS ORIS and industrial printing"],
+    prerequisites: ["Day 1 portfolio and service-call orientation"],
     sourceRef: {
-      title: "Digital Prepress and Industrial Workflow Architecture",
-      citation: "ISO 12647 Print Standards & CGS ORIS Technical Workflow Whitepaper",
-      confidenceLevel: "industry_standard",
-      notes: "Standard industrial color management and RIP screening pipeline."
+      title: "General graphic-arts workflow concepts and CGS ORIS public portfolio overview",
+      citation: `${portfolioOverview}; ISO/TC 130 print-production standards overview: https://committee.iso.org/sites/tc130/home/projects/published/iso-standards.html`,
+      confidenceLevel: "industry_concept_and_public_overview",
+      notes: "This lesson teaches a conceptual workflow. It does not require a particular file format, RIP, network topology, printer connection, or ORIS feature.",
     },
     contentBlocks: [
-      {
-        sectionTitle: "End-to-End Workflow Architecture",
-        blockType: "teaching",
-        contentMarkdown: `### The Seven Stages of Industrial Imaging & Printing
+      section("A workflow is a set of questions, not a universal product chain", `A digital print workflow commonly handles a customer request and source file, validates the job, applies an output-specific color workflow when configured, processes data for a device, produces a physical result, and compares that result with agreed criteria.
 
-The CGS ORIS ecosystem bridges physical capture, precision color mathematics, raster screening, mechanical deposition, and quality verification:
+Some jobs include a scan of a physical sample; others do not. A color-management application and a RIP may be separate products, combined, or absent from a particular task. Confirm the real installation rather than inferring it from a diagram.`),
+      section("Separate the layers of evidence", `When a job fails, ask which stage first diverges from expectation:
 
-\`\`\`
-[ Stage 1: Input / Artwork / Substrate Scan ]
-    ├── Direct Digital Vector/Raster (PDF/X, TIFF, AI)
-    └── Physical Material Surface (Wood, Leather, Ceramic, Decor) 
-             │
-             ▼
-[ Stage 2: METIS Advanced Capture ]
-    ├── Synchronized Directional Illumination (DC LED)
-    ├── Photometric Stereo (3D Surface Relief / Height Maps)
-    └── Colorimetric Camera Sensor Output (Raw / 16-bit TIFF)
-             │
-             ▼
-[ Stage 3: CGS ORIS Color Management & Proofing ]
-    ├── ORIS COLOR TUNER (Contract Proofing & Spot Color Matching)
-    ├── ORIS PRESS MATCHER (Digital Press Standardization & G7/FOGRA)
-    ├── ORIS X GAMUT (Extended Color Gamut 7-Color CMYK+OGV Separation)
-    └── CxF TOOLBOX (Exact Spectral Color Communication)
-             │
-             ▼
-[ Stage 4: Raster Image Processing (RIP) ]
-    ├── PostScript/PDF Interpreter (Color space conversion, Trapping)
-    ├── Halftone Screening (AM/FM or Error Diffusion)
-    └── Multi-bit Dot Generation (Picoliter drop sizing: 6pl, 12pl, 18pl)
-             │
-             ▼
-[ Stage 5: Industrial Printer Controller & Motion ]
-    ├── Gigabit Ethernet Buffer / Optical Fiber Data Link
-    ├── Linear Encoder Position Sync (X-axis carriage & Y-axis media)
-    └── Piezoelectric Waveform Triggering (PZT element pulse width)
-             │
-             ▼
-[ Stage 6: Deposition & UV Curing / Drying ]
-    ├── Micro-drop Jetting (10,000–30,000 drops/second per nozzle)
-    └── UV-LED Irradiation (395nm Photopolymerization Free-Radical Cure)
-             │
-             ▼
-[ Stage 7: Measurement, Inspection & Feedback Loop ]
-    ├── Spectrophotometer Measurement (CIELAB ΔE00 verification)
-    ├── ORIS CERTIFIED & EVALUATE (Pass/Fail conformity report)
-    └── Iterative Curve Update (Feedback to RIP / Press Matcher)
-\`\`\``
-      },
-      {
-        sectionTitle: "Software Differentiation: Matching ORIS Tools to Workflow Nodes",
-        blockType: "teaching",
-        contentMarkdown: `### Why One Software Tool Cannot Do Everything
-Field service technicians frequently encounter customers attempting to use the wrong software module for their production goal. Understanding these distinctions is critical for on-site diagnostic conversations:
+- **Input:** Is the supplied file the expected revision? Is the issue visible in the source data?
+- **Color workflow:** Which source and destination conditions, profiles, spot-color rules, and substrate are configured?
+- **RIP or controller:** Was the job accepted, processed, queued, or reported with an error?
+- **Output device:** Does the device show a status or error? What does its approved test produce?
+- **Verification:** Which target, instrument condition, and acceptance limit did the customer specify?
 
-- **ORIS COLOR TUNER**: The world benchmark for contract digital proofing. Used to produce legally binding contract proofs on calibrated inkjet systems (e.g. Epson/Canon) before going to high-speed offset or flexo presses.
-- **ORIS PRESS MATCHER**: Built for production normalization. When a customer has three different digital presses (e.g., an HP Indigo, a Platinum UV flatbed, and a Ricoh roll printer), Press Matcher balances all three so the same job looks identical on all three devices.
-- **ORIS X GAMUT**: Multi-color separation software for extended color gamut (ECG) printing. It converts spot colors (Pantones) into a fixed set of 7 process inks (CMYK + Orange, Green, Violet), eliminating expensive press wash-ups and spot-ink mixing.
-- **ORIS FLEX PACK**: Specialized packaging proofing system enabling direct printing on original production substrates (shrink films, foils, carton board) with white and metallic ink management.
-- **ORIS CERTIFIED & EVALUATE**: Automated cloud or local quality-control tool that reads color control strips, computes Delta E against ISO/GRACoL/G7 standards, and prints a compliance label.`
-      },
-      {
-        sectionTitle: "The Anatomy of a RIP (Raster Image Processor)",
-        blockType: "teaching",
-        contentMarkdown: `### What Happens Inside the RIP?
-A common misconception is that a printer directly prints a PDF. In reality, modern industrial printheads cannot interpret vector shapes, curves, or RGB/CMYK continuous-tone values.
+These are diagnostic prompts, not repair steps. Logs and settings are useful only when authorized and interpreted using the installed product's current documentation.`, "visual_explanation"),
+      section("Field example: only one material looks different", `A synthetic customer example: the same artwork appears different on a new stock, while an earlier job looked acceptable. Several explanations remain possible: the stock itself differs, the selected media configuration or output profile is wrong, the process changed, or the sample was measured under different conditions.
 
-The RIP performs three mandatory tasks:
-1. **Interpretation & Normalization**: Decomposing PDF/X objects, transparency blending, and converting embedded RGB or Pantone data into the target printer's color space via DeviceLink ICC profiles.
-2. **Screening (Dithering)**: Continuous-tone images (0-255 tonal levels per pixel) are transformed into discrete dot patterns. 
-   - *Binary Screening*: Drop / No-Drop.
-   - *Multi-Drop (Grayscale) Screening*: Selecting drop volume sizes (e.g., Small = 6 pL, Medium = 14 pL, Large = 24 pL) by modulating electrical pulse waveforms applied to the piezoelectric crystal.
-3. **Band Slicing & Fire Order Generation**: Organizing millions of dots into synchronized swaths corresponding precisely to the nozzle rows on the carriage and the encoder pulse frequency.`
-      },
-      {
-        sectionTitle: "Closed-Loop Feedback: The Color Correction Loop",
-        blockType: "visual_explanation",
-        contentMarkdown: `### How Color Accuracy Is Maintained Over Time
+First compare job identity, material identity, configuration, target, and measurement method. Preserve the approved baseline. Do not assume that adding white ink, changing a profile, or choosing a named software product is appropriate; those choices depend on the device, workflow, and customer specification.` , "field_example"),
+      section("Interactive practice: mark where the evidence belongs", `For each observation—source file differs, job remains queued, output color shifts, or measurement conditions differ—name the stage it informs and one record that could confirm it. Then state one alternative explanation.
 
-Even the best industrial printer experiences drift due to:
-- Temperature fluctuations altering ink viscosity.
-- UV LED lamp output decay over thousands of operating hours.
-- Batch-to-batch substrate coating differences.
-
-\`\`\`
-[ Test Target Printed ] ──► [ Spectrophotometer Scan (e.g., i1Pro3) ]
-                                            │
-                                            ▼
-                           [ Measure CIELAB Spectral Values ]
-                                            │
-                                            ▼
-                           [ Calculate ΔE00 against Reference ]
-                                            │
-               ┌────────────────────────────┴──────────────────────────┐
-               ▼                                                       ▼
-        [ ΔE00 <= 1.5 ]                                         [ ΔE00 > 1.5 ]
-      Pass Certification                                  Linearization Curves Updated
-   (Apply Certified Label)                              (Feed into ORIS Press Matcher)
-                                                                       │
-                                                                       ▼
-                                                          [ Regenerate DeviceLink Profile ]
-\`\`\`
-
-Without this closed loop, field technicians will waste hours chasing \"hardware defects\" that are actually uncompensated mechanical or optical drift.`
-      },
-      {
-        sectionTitle: "Realistic Field Case Example",
-        blockType: "field_example",
-        contentMarkdown: `### Field Case #102: The \"Wrong Color\" Finger-Pointing Match
-**Location:** Industrial Packaging Converter, Minneapolis, MN.  
-**Complaint:** Brand owner rejected 5,000 corrugated display cartons because the corporate brand red was printing \"dull and brownish\" on their Platinum hybrid UV printer. The prepress department blamed the printer's printheads; the press operator blamed the ink batch.
-
-**FST Investigation:**
-1. Ran a standard nozzle check: all cyan, magenta, yellow, black, and light nozzles were firing with zero missing or deflected jets.
-2. Checked the RIP job settings: the prepress operator had applied a generic coated paper ICC profile (GRACoL 2013) to an uncoated, recycled kraft corrugated board.
-3. Used a spectrophotometer to measure the unprinted substrate. The raw kraft board had an L*a*b* of (68, +5, +22)—heavily yellow-brown, drastically shifting the base white point.
-4. Generated an updated substrate-specific profile using ORIS Press Matcher with white-ink underprint compensation.
-
-**Result:** Delta E dropped from an unacceptable 6.8 down to 1.2. The customer avoided scrapping $12,000 in corrugated stock and signed off on production.`
-      },
-      {
-        sectionTitle: "Interactive Practice & Summary",
-        blockType: "interactive_practice",
-        contentMarkdown: `### Diagnostic Questioning Drill: Isolating Workflow vs Hardware
-
-When a customer complains of an image artifact, ask these three filtering questions:
-1. *Does the artifact appear in the identical spatial position on every single print?*  
-   - If **YES**, it is almost always digital/RIP/file-related (e.g., corrupted raster, rendering glitch).
-   - If **NO** (moves or drifts), it is mechanical, encoder, or media feed related.
-2. *Does the issue affect all colors or only one ink channel?*  
-   - If **ONE channel**, inspect printhead, damper, ink supply line, or meniscus sub-tank for that channel.
-   - If **ALL channels**, inspect carriage motion, encoder strip, gantry leveling, UV curing, or global RIP settings.
-3. *Did this job ever print correctly on this exact media roll/batch?*  
-   - Helps isolate recent operator profile changes or substrate lot variation.`
-      }
+A useful answer connects a symptom to evidence without jumping from correlation to cause. If you cannot identify an authorized way to obtain the evidence, ask the system owner or technical support for the approved process.` , "interactive_practice"),
+      section("Summary", `A workflow diagram helps organize questions, but actual system boundaries are determined by the installed products and customer configuration. Keep source data, color transformation, job processing, physical output, and measurement distinct. Continue to the knowledge check when ready; the lesson remains available for review.`, "summary_review"),
     ],
     questions: [
-      {
-        text: "What is the primary role of a Raster Image Processor (RIP) in an industrial printing workflow?",
-        domain: "color_oris",
-        explanation: "A RIP interprets vector and image data, applies color management profiles, and screens continuous-tone graphics into discrete multi-drop or 1-bit dot matrices for printhead firing.",
-        options: [
-          { text: "It converts vector and continuous-tone pixels into screened micro-dot firing patterns matching printhead nozzle geometry.", isCorrect: true, explanation: "Correct. The RIP translates high-level artwork into raw droplet deposition instructions." },
-          { text: "It mechanically pumps ink from main reservoirs into the printhead sub-tanks.", isCorrect: false, explanation: "Incorrect. That is the function of the pneumatic/ink delivery system." },
-          { text: "It generates physical 3D relief on the surface of paper using heat compression.", isCorrect: false, explanation: "Incorrect. That is an embossing or structured UV print effect, not the RIP core definition." },
-          { text: "It monitors the electrical ground wiring of the main facility.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "Which CGS ORIS software package is specifically designed to normalize color output across multiple different digital press models?",
-        domain: "color_oris",
-        explanation: "ORIS PRESS MATCHER is built to standardize and harmonize color reproduction across disparate press architectures.",
-        options: [
-          { text: "ORIS PRESS MATCHER", isCorrect: true, explanation: "Correct. Press Matcher synchronizes diverse output devices to common standards." },
-          { text: "ORIS COLOR TUNER", isCorrect: false, explanation: "Color Tuner is primarily focused on high-precision contract proofing." },
-          { text: "ORIS X GAMUT", isCorrect: false, explanation: "X Gamut specializes in extended color gamut (CMYK+OGV) spot-color reproduction." },
-          { text: "ORIS CxF TOOLBOX", isCorrect: false, explanation: "CxF Toolbox handles spectral color communication and digital swatch standards." }
-        ]
-      },
-      {
-        text: "In an industrial UV inkjet printing system, how is multi-drop (grayscale) printing achieved?",
-        domain: "hardware_safety",
-        explanation: "Grayscale printing modulates the piezoelectric electrical waveform to eject varying drop sizes (e.g., small, medium, large picoliters) per pixel location.",
-        options: [
-          { text: "By physically moving the printhead closer and farther from the paper during each pass.", isCorrect: false, explanation: "Incorrect. Printhead height is fixed during printing to avoid collisions." },
-          { text: "By modulating the electrical voltage waveform to the piezo crystal, dispensing small, medium, or large droplet volumes.", isCorrect: true, explanation: "Correct. Waveform pulse shape determines acoustic pressure and ejected drop volume." },
-          { text: "By diluting the ink with cleaning flush solvent inside the carriage in real time.", isCorrect: false, explanation: "Incorrect. Solvents are never mixed into live ink during printing." },
-          { text: "By turning the UV curing lamp on and off between individual dots.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "If a severe color shift occurs immediately after a customer switches from bright white gloss vinyl to unbleached kraft board, what is the most probable cause?",
-        domain: "color_oris",
-        explanation: "Substrate white point dramatically alters perceived color; switching substrates without updating the ICC profile or applying white underprint shifts all chromatic values.",
-        options: [
-          { text: "A blown electrical fuse on the main carriage board.", isCorrect: false, explanation: "A blown fuse would halt the machine or disable an entire printhead, not merely shift color." },
-          { text: "The substrate white point and absorption characteristics changed drastically, requiring a substrate-specific profile or white ink underprint.", isCorrect: true, explanation: "Correct. Color appearance depends directly on substrate reflectance and white point." },
-          { text: "The linear encoder strip needs to be lubricated with machine oil.", isCorrect: false, explanation: "Oil on an optical encoder will destroy optical tracking and cause carriage crashes." },
-          { text: "The RIP license has expired.", isCorrect: false, explanation: "An expired license stops job output altogether or prints demo watermarks." }
-        ]
-      },
-      {
-        text: "In the CGS ORIS workflow, what is the function of ORIS CERTIFIED & EVALUATE?",
-        domain: "color_oris",
-        explanation: "ORIS CERTIFIED & EVALUATE measures color wedges using a spectrophotometer to verify compliance with industry standards (e.g. GRACoL, Fogra) and prints a certification label.",
-        options: [
-          { text: "It mechanically recalibrates the drive belt tension on Platinum printers.", isCorrect: false, explanation: "Incorrect. Certified & Evaluate is pure measurement software." },
-          { text: "It measures printed color targets against international standards (ISO/G7) to provide statistical quality verification and pass/fail reports.", isCorrect: true, explanation: "Correct. It ensures output meets agreed-upon tolerance criteria." },
-          { text: "It detects missing physical nozzles using optical laser cameras.", isCorrect: false, explanation: "Incorrect." },
-          { text: "It speeds up printhead carriage velocity by 50%.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      }
-    ]
+      question("A job prints with a color difference. Which information is most useful before changing settings?", "color_oris", "The job revision, material, configured workflow, approved target, and measurement conditions.", "These facts make comparisons meaningful and help identify which stage changed.", [
+        { text: "A generic list of every product in the vendor's portfolio.", explanation: "A portfolio list does not identify the customer's actual configuration." },
+        { text: "A random new profile chosen because its name sounds similar.", explanation: "An unverified profile change can introduce new errors." },
+        { text: "The assumption that every color difference is caused by the printer.", explanation: "File, settings, substrate, measurement, and other stages can contribute." },
+      ]),
+      question("What can the systems map's arrows establish?", "color_oris", "An illustrative way to discuss possible relationships; actual connections must be checked in the installed workflow.", "The arrows are conceptual learning aids, not an integration specification.", [
+        { text: "A mandatory route used by every customer job.", explanation: "Workflows vary by product, license, customer, and task." },
+        { text: "That ORIS software directly controls every printer.", explanation: "The diagram does not establish a specific control connection." },
+        { text: "That METIS scanning is required before printing.", explanation: "Scanning is optional and depends on the job." },
+      ]),
+      question("Which stage handles translation of a job for a specific output device, when a configured RIP/controller is present?", "color_oris", "The RIP or device-controller stage, as documented for that installation.", "A configured RIP/controller commonly processes job data, but its function and boundary depend on the actual system.", [
+        { text: "The customer interview stage.", explanation: "Interview preparation is not job processing." },
+        { text: "The physical substrate itself.", explanation: "The substrate is output material, not the job processor." },
+        { text: "A color difference value such as ΔE.", explanation: "ΔE describes a difference; it does not process the job." },
+      ]),
+      question("Why should the approved target and measurement conditions be recorded?", "color_oris", "Because results are only comparable when the reference and method are understood and appropriate.", "Measurement conditions can affect reported values; customer acceptance terms must be explicit.", [
+        { text: "To make all materials produce identical color without calibration.", explanation: "A record does not remove physical or process differences." },
+        { text: "Because every customer uses the same tolerance.", explanation: "Acceptance criteria are job-specific." },
+        { text: "Because the meter itself decides the contractual acceptance limit.", explanation: "A measurement instrument does not define a customer's contract." },
+      ]),
+      question("A physical sample scan appears in one customer's workflow. What should you infer?", "color_oris", "Only that this workflow includes a scan; do not infer all workflows require one.", "The scanner is an optional stage depending on job requirements and installed products.", [
+        { text: "Every job must be captured by METIS before it can be printed.", explanation: "The course map does not imply that universal requirement." },
+        { text: "The printer and scanner share a proprietary file connection.", explanation: "A workflow example does not prove a particular format or connection." },
+        { text: "The scan is necessarily a 3D surface map.", explanation: "Capture capabilities vary by scanner family and model." },
+      ]),
+    ],
   },
-
-  // DAY 3
   {
     dayNumber: 3,
     bootcampDayNumber: 2,
-    title: "Equipment Safety and OSHA LOTO Principles",
-    slug: "day-03-equipment-safety-and-loto-principles",
-    summary: "Master life-safety protocols on industrial printing equipment: OSHA 29 CFR 1910.147 Lockout/Tagout, 208-480V 3-phase electrical hazard mitigation, UV-LED radiation shielding, and ink SDS chemistry.",
+    title: "Hazardous Energy and LOTO Principles",
+    slug: "day-03-equipment-safety",
+    summary: "Learn the distinction between stopping a machine and controlling hazardous energy, how to recognize stop-work conditions, and why site-specific authorized procedures govern all service work.",
     estimatedMinutes: 90,
     competencyDomain: "hardware_safety",
     objectives: [
-      "Explain the mandatory difference between an Emergency Stop (E-Stop) and true Lockout/Tagout (LOTO) energy isolation.",
-      "Identify the high-voltage, mechanical pinch, and optical radiation hazard zones on industrial flatbed/hybrid printers.",
-      "Select appropriate Personal Protective Equipment (PPE) for chemical ink handling, solvent flushing, and UV emitter testing.",
-      "Formulate safe escalation procedures when encountering unauthorized customer safety bypasses or damaged interlocks."
+      "Explain why an emergency stop is not an energy-isolating device or a substitute for an applicable energy-control procedure.",
+      "Recognize stored and residual energy as well as electrical, mechanical, pneumatic, hydraulic, thermal, chemical, and optical hazards.",
+      "Describe the purpose of an employer's energy-control program without treating this lesson as an equipment-specific LOTO procedure.",
+      "Choose safe stop-work and escalation actions when training, authorization, documentation, or hazard control is missing.",
     ],
-    prerequisites: ["Day 1-2 system overviews"],
+    prerequisites: ["Day 1-2 workflow and service-call fundamentals"],
     sourceRef: {
-      title: "OSHA Standard 29 CFR 1910.147 (The Control of Hazardous Energy)",
-      citation: "U.S. Dept of Labor OSHA & Industrial Printing Safety Manuals",
-      confidenceLevel: "industry_standard",
-      notes: "Mandatory compliance for all on-site industrial machinery service technicians."
+      title: "OSHA 29 CFR 1910.147 — Control of Hazardous Energy",
+      citation: osha1910147,
+      confidenceLevel: "primary_regulatory_source",
+      notes: "The standard establishes employer energy-control program requirements for covered servicing and maintenance. Applicability, exceptions, other applicable electrical-safety rules, training, and the machine-specific procedure must be determined by the employer and qualified personnel. This lesson is not a lockout procedure.",
     },
     contentBlocks: [
-      {
-        sectionTitle: "Lockout/Tagout (LOTO): The Core Distinction",
-        blockType: "teaching",
-        contentMarkdown: `### The Golden Rule of Industrial Field Service
-**AN EMERGENCY STOP (E-STOP) IS NOT ZERO-ENERGY ISOLATION.**
+      section("Stop is not isolate", `An emergency stop or control-panel stop can request that motion or a process stop. It does not, by itself, prove that hazardous energy has been isolated, that stored energy is safe, or that unexpected restart is prevented.
 
-Field technicians are injured or killed when they mistake a software-controlled or interlocked stop for energy isolation. 
+OSHA 29 CFR 1910.147 addresses the control of hazardous energy for covered servicing and maintenance. The standard requires an employer energy-control program and procedures; authorized employees must be trained to follow applicable procedures. Do not substitute a generic lesson, a stop button, an interlock, or a verbal assurance for the actual site procedure.`),
+      section("Recognize energy sources and stored energy", `Possible hazards depend on the machine and task. Examples include electrical supply, moving or gravity-loaded assemblies, pneumatic or hydraulic pressure, springs, thermal energy, chemical exposure, optical radiation, and stored energy that remains after a control is switched off.
 
-#### Why an E-Stop is NOT LOTO:
-1. An E-Stop is an electrical control-circuit interrupt. If a relay welds shut, a contact fails, or a PLC logic fault occurs, energy can still flow to servomotors or high-voltage circuits.
-2. An E-Stop does not dissipate stored mechanical energy (gravity on raised assemblies, hydraulic pressure, pneumatic reservoirs, or high-voltage capacitor banks).
-3. Under OSHA Standard **29 CFR 1910.147**, whenever a technician places any part of their body into a machine hazard zone (such as servicing drive belts, replacing main power supplies, or working on carriage motion rails), **the machine must be mechanically locked out at the primary disconnect switch** and tagged with the technician's personal lock and key.`
-      },
-      {
-        sectionTitle: "Hazard Zones on Platinum Industrial Printers",
-        blockType: "teaching",
-        contentMarkdown: `### 1. High-Voltage Electrical Hazards (208V–480V AC, 3-Phase)
-- Main distribution terminal blocks, step-up/step-down transformers, variable frequency drives (VFDs), and vacuum blower contactors.
-- *DC Bus Danger*: Switching power supplies and LED driver boards contain massive electrolytic capacitors that retain lethal DC voltage (60V–400V DC) for several minutes after AC power is disconnected. **Always measure with a calibrated multimeter before touching DC terminals.**
+A zero-motion display does not establish a safe work condition. Never infer that equipment is isolated from a single indicator, estimated wait time, or a procedure from another model. If a hazard source, control, or verification method is unknown, stop and contact the site's authorized safety or technical lead.`, "visual_explanation"),
+      section("What an authorized energy-control process addresses", `At a high level, an employer procedure identifies the equipment, energy sources, hazards, energy-isolating devices, authorized roles, shutdown and isolation steps, methods to control stored or residual energy, verification, and restoration of service. OSHA also describes notification, lockout/tagout devices, and continued control where stored energy may reaccumulate.
 
-### 2. UV-LED Optical Radiation Hazards (UVA: 365nm–395nm)
-- UV-LED curing arrays emit intense, high-radiance ultraviolet light.
-- Exposure causes photokeratitis (\"arc eye\" or \"welder's flash\") and photochemical retinal damage, as well as severe skin erythema (burns).
-- *Critical Rule*: **NEVER defeat UV shielding curtains or interlock switches to observe active curing lamps with the naked eye.** UV safety glasses rated for 365–405nm optical density (OD 5+) must be worn whenever testing lamps.
+The actual order, devices, verification method, exceptions, and people involved depend on the workplace's written procedure, equipment, applicable standards, and training. This academy deliberately does not provide disconnect locations, voltage tests, discharge times, PPE ratings, or model-specific service-menu directions.`),
+      section("Chemical, motion, and optical hazards", `Read the current safety data sheet and site risk assessment for the exact material. Required protective equipment depends on the actual chemical, task, and employer guidance; do not select a glove or eye-protection rating from a generic training example.
 
-### 3. Kinetic & Pinch Hazards
-- High-speed carriage movement: Industrial gantries move at speeds up to 1.5 to 2.2 meters per second, driven by high-torque AC servo motors. A gantry can crush fingers, arms, or skull against end-stops.
-- Substrate pinch rollers: Spring-loaded nip rollers exert hundreds of pounds of continuous clamping force.`
-      },
-      {
-        sectionTitle: "Chemical Safety: UV Monomers, Photoinitiators, and SDS",
-        blockType: "teaching",
-        contentMarkdown: `### Understanding UV Ink Chemistry
-Unlike water-based or solvent inks that dry by evaporation, UV inks do not dry until exposed to intense ultraviolet radiation. They consist of:
-- **Monomers & Oligomers**: Reactive acrylates that penetrate skin and act as severe chemical sensitizers. Repeated skin contact causes permanent allergic contact dermatitis.
-- **Photoinitiators**: Absorb UV photons to generate free radicals that trigger polymerization. Many photoinitiators are toxic if absorbed through the skin.
+Do not defeat a guard, interlock, emergency stop, or other safety device. If a guard is damaged, missing, or bypassed, keep people away from the hazard, do not continue operation, and follow site shutdown and escalation procedures.`, "teaching"),
+      section("Scenario: an interlock is taped", `Synthetic practice case: an operator has taped over a guard switch so production can continue. Do not touch the machine to test the bypass, remove or restore a device outside your authorization, or use an emergency stop as a substitute for energy control.
 
-### Mandatory Chemical PPE:
-1. **Gloves**: Standard thin household latex gloves degrade within seconds when exposed to raw UV monomers. **Nitrile gloves (minimum 5-8 mil thickness)** or chemical-resistant butyl gloves must be worn. Change gloves immediately if ink splashes on them.
-2. **Eye Protection**: Chemical splash goggles when handling liquid ink bottles, waste tanks, or flushing lines.
-3. **Spill Management**: Always have an absorbent spill kit on hand. Dispose of uncured ink waste according to local EPA hazardous waste regulations—never wash down municipal drains.`
-      },
-      {
-        sectionTitle: "Annotated Visual: The Six Steps of Safe LOTO Execution",
-        blockType: "visual_explanation",
-        contentMarkdown: `### The OSHA LOTO Sequence for Field Technicians
-
-\`\`\`
-[ Step 1: Preparation ]
-   └── Notify customer plant manager & machine operators of shutdown.
-          │
-          ▼
-[ Step 2: Orderly Shutdown ]
-   └── Park carriage in capping station; shut down controller software cleanly.
-          │
-          ▼
-[ Step 3: Energy Isolation ]
-   └── Rotate main wall disconnect lever to 'OFF' position.
-          │
-          ▼
-[ Step 4: Lock & Tag Application ]
-   └── Apply personal red padlock, hasp, and signed danger tag to disconnect.
-          │
-          ▼
-[ Step 5: Dissipation of Stored Energy ]
-   └── Bleed pneumatic pressure regulators; wait 5 mins for capacitor discharge.
-          │
-          ▼
-[ Step 6: Zero-Energy Verification (CRITICAL) ]
-   └── Attempt to restart machine using operator panel controls (Verify dead),
-   └── Measure voltage L1-L2, L2-L3, L1-L3, and L-to-Ground with multimeter.
-\`\`\`
-
-**Rule of Thumb**: Until you physically meter the terminals yourself, treat every wire as energized.`
-      },
-      {
-        sectionTitle: "Realistic Field Case Example: Unauthorized Bypasses",
-        blockType: "field_example",
-        contentMarkdown: `### Field Case #103: The Taped Safety Interlock
-**Location:** Sign & Display Shop, Milwaukee, WI.  
-**Situation:** An FST arrived to replace an X-axis carriage belt. Upon inspecting the front gantry cover, the technician discovered the customer had placed heavy duct tape over the magnetic safety interlock switch so operators could open the lid during high-speed printing without tripping the machine.
-
-**FST Action:**
-1. The technician immediately stopped work and explained the extreme liability and imminent amputation/UV blindness hazard to the plant manager.
-2. Refused to operate the machine until the duct tape was removed and the interlock was tested for proper automatic shutdown functionality.
-3. Logged the finding with photographs in the CGS ORIS service management system and had the customer sign an acknowledgment.
-
-**Result:** The customer removed the bypass. A potential catastrophic OSHA citation and serious worker injury were prevented.`
-      },
-      {
-        sectionTitle: "Summary & Review",
-        blockType: "summary_review",
-        contentMarkdown: `### Safety Summary for the Interview & Field
-- **LOTO > E-Stop**: Never rely on an E-Stop when your hands are inside mechanical drive systems or electrical cabinets.
-- **Capacitors retain lethal DC charge**: Wait for discharge and measure with a DMM.
-- **UV radiation**: Invisible/near-visible high irradiance causes irreversible eye and skin damage. Wear OD5+ rated glasses.
-- **Chemical sensitization**: Always wear nitrile gloves when touching ink lines, dampers, printheads, or waste containers.`
-      }
+Stop the task, warn affected people without creating additional exposure, keep clear of the hazard, notify the responsible site contact, and document the observed condition and escalation. Restart only when an authorized person confirms the approved safety requirements are met.`, "field_example"),
+      section("Summary", `If the hazard is not controlled, stop. If the required procedure or your authorization is unclear, stop and escalate. An E-stop is not energy isolation. This is safety education, not authorization to service equipment or a substitute for employer training and machine-specific written procedures.`, "summary_review"),
     ],
     questions: [
-      {
-        text: "Why is hitting an Emergency Stop (E-Stop) button insufficient before replacing a gantry drive belt?",
-        domain: "hardware_safety",
-        explanation: "An E-Stop is a control-circuit interrupt, not an energy isolation device. It does not isolate primary power or prevent inadvertent mechanical motion under OSHA LOTO standards.",
-        options: [
-          { text: "Because an E-Stop only halts software commands and does not physically isolate primary incoming electrical power or stored mechanical energy.", isCorrect: true, explanation: "Correct. Control circuitry can fail or be bypassed; physical LOTO is mandatory." },
-          { text: "Because E-Stops only work when the machine is connected to Wi-Fi.", isCorrect: false, explanation: "Incorrect." },
-          { text: "Because pressing an E-Stop permanently destroys the printer's motherboard.", isCorrect: false, explanation: "Incorrect." },
-          { text: "Because the E-Stop only cuts power to the vacuum bed.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "What type of gloves must a field service technician wear when handling UV-curable inks and flush solvents?",
-        domain: "hardware_safety",
-        explanation: "Nitrile or chemical-resistant butyl gloves must be used; standard latex degrades rapidly when contacted by aggressive UV acrylate monomers.",
-        options: [
-          { text: "Thin natural latex examination gloves.", isCorrect: false, explanation: "Latex breaks down rapidly in contact with UV monomers." },
-          { text: "Heavy nitrile (minimum 5-8 mil) or chemical-resistant butyl gloves.", isCorrect: true, explanation: "Correct. Nitrile provides proven chemical barrier resistance against acrylate monomers." },
-          { text: "Cotton work gloves for mechanical grip.", isCorrect: false, explanation: "Cotton absorbs liquid ink and presses it directly against the skin, accelerating sensitization." },
-          { text: "No gloves are necessary if hands are washed within 30 minutes.", isCorrect: false, explanation: "Dangerous; UV monomers cause permanent allergic sensitization." }
-        ]
-      },
-      {
-        text: "What hazard is specifically associated with the large electrolytic capacitors on a printer's DC power supply and servo drives?",
-        domain: "hardware_safety",
-        explanation: "Capacitors store electrical energy and can deliver lethal DC shocks for several minutes after AC power disconnect; technicians must meter them before touching.",
-        options: [
-          { text: "They can leak dangerous radioactive gas into the print shop.", isCorrect: false, explanation: "Incorrect." },
-          { text: "They retain dangerous or lethal high-voltage DC charge even after the main AC disconnect has been shut off.", isCorrect: true, explanation: "Correct. Always allow discharge time and verify with a multimeter." },
-          { text: "They cause printheads to clog if touched by a magnetic screwdriver.", isCorrect: false, explanation: "Incorrect." },
-          { text: "They emit harmful ultraviolet radiation when cold.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "You arrive at a customer facility and find the magnetic interlock on the UV carriage cover has been taped down to allow printing with the hood open. What is the required action?",
-        domain: "hardware_safety",
-        explanation: "Technicians must never service or sign off on machinery with bypassed safety devices. You must cease work, notify management, remove the bypass, and restore interlock integrity.",
-        options: [
-          { text: "Ignore it and begin working since it makes watching the nozzles easier.", isCorrect: false, explanation: "Severe safety violation." },
-          { text: "Refuse to operate or service the machine until the safety bypass is removed, interlocks are tested, and the condition is documented with the plant manager.", isCorrect: true, explanation: "Correct. Safety interlocks must never be bypassed during operation." },
-          { text: "Replace the interlock switch with a jumper wire permanently.", isCorrect: false, explanation: "Gross negligence." },
-          { text: "Advise the customer to sell the machine.", isCorrect: false, explanation: "Unprofessional and irrelevant." }
-        ]
-      },
-      {
-        text: "When testing UV-LED curing lamp output on a Platinum printer, what personal protective equipment is mandatory?",
-        domain: "hardware_safety",
-        explanation: "UV-rated safety goggles/glasses rated for the specific emission wavelength (e.g. 365-405nm, OD 5+) and skin shielding are mandatory to avoid eye and tissue damage.",
-        options: [
-          { text: "Standard polarized sunglasses.", isCorrect: false, explanation: "Sunglasses do not provide certified optical density (OD) against high-power industrial UV LEDs." },
-          { text: "Certified UV-protective glasses/goggles matching the 365–405nm emitter wavelength (OD 5+) and skin coverage.", isCorrect: true, explanation: "Correct. High-irradiance UV causes acute corneal damage without certified filtering." },
-          { text: "Welding helmet with shade 14 dark glass only.", isCorrect: false, explanation: "Too dark to read diagnostic instruments safely; proper OD-rated UV glasses are appropriate." },
-          { text: "Earplugs and steel-toe boots only.", isCorrect: false, explanation: "Does not protect eyes from UV radiation." }
-        ]
-      }
-    ]
+      question("What does an emergency stop prove about hazardous energy?", "hardware_safety", "It may request a stop, but it does not by itself prove energy isolation or control of stored energy.", "Control functions and energy-isolating devices are different; use the applicable employer procedure.", [
+        { text: "That all sources of energy are isolated and locked.", explanation: "An E-stop is not, by itself, an energy-isolating device." },
+        { text: "That all stored energy has dissipated.", explanation: "A stop command does not establish stored-energy control." },
+        { text: "That a technician may enter any guarded area.", explanation: "Entry depends on risk, task authorization, and the applicable procedure." },
+      ]),
+      question("Who determines the required energy-control procedure for covered work?", "hardware_safety", "The employer's energy-control program and equipment-specific procedure, followed by trained authorized employees.", "OSHA requires employers to establish a program and procedures; this course cannot define a site procedure.", [
+        { text: "A generic web lesson for every machine.", explanation: "A generic lesson cannot identify a machine's actual energy controls." },
+        { text: "The customer who wants production resumed fastest.", explanation: "Production pressure does not establish a safe work method." },
+        { text: "Any technician who has used a similar model.", explanation: "Experience does not replace required authorization and site-specific training." },
+      ]),
+      question("You cannot identify the approved isolation or verification method. What is the safe choice?", "hardware_safety", "Stop work, keep people clear as appropriate, and obtain the authorized site procedure and competent assistance.", "Unknown energy control is a stop-work condition; do not improvise an isolation method.", [
+        { text: "Assume that waiting several minutes makes the machine safe.", explanation: "A guessed delay does not verify energy control." },
+        { text: "Use the E-stop and begin the repair.", explanation: "An E-stop is not a substitute for the required energy-control procedure." },
+        { text: "Ask an operator to hold the control panel while you work.", explanation: "A verbal or manual control does not establish isolation." },
+      ]),
+      question("A guard interlock is bypassed. What should a field learner recommend?", "hardware_safety", "Do not operate or test the bypass; keep clear, alert the responsible site contact, and follow authorized stop-work and escalation procedures.", "A bypassed safety device creates an uncontrolled condition that requires safe containment and competent action.", [
+        { text: "Leave the tape in place for one short diagnostic run.", explanation: "A short test does not make a bypass safe." },
+        { text: "Remove the interlock and continue the job without telling the site contact.", explanation: "Unplanned work on safety devices is not an authorized remedy." },
+        { text: "Use the emergency stop as the replacement for the guard.", explanation: "A stop button is not a protective guard or energy-isolation process." },
+      ]),
+      question("Which statement about PPE selection is appropriate?", "hardware_safety", "Use the current SDS, task risk assessment, and employer instructions for the actual material and work.", "Chemical compatibility and PPE depend on the product and task; universal ratings should not be invented.", [
+        { text: "One glove material is correct for every ink, cleaner, and service task.", explanation: "Compatibility differs; consult current safety information." },
+        { text: "PPE can replace guarding and hazardous-energy controls.", explanation: "PPE does not substitute for required engineering or energy controls." },
+        { text: "A visual inspection always identifies the chemical exposure risk.", explanation: "The chemical identity and SDS are important." },
+      ]),
+    ],
   },
-
-  // DAY 4
   {
     dayNumber: 4,
-    bootcampDayNumber: 1,
-    title: "Platinum Printer Architecture and Subsystems",
+    title: "Industrial Printer Systems: A Conceptual Overview",
     slug: "day-04-platinum-printer-architecture-and-subsystems",
-    summary: "Deep dive into the 13 core electromechanical subsystems of Platinum industrial UV-LED flatbed and hybrid printers: motion, hydraulics, vacuum, curing, and control electronics.",
+    summary: "Build a mental model of common printer functions while learning to verify the actual options, materials, safety systems, and approved service information for each installed model.",
     estimatedMinutes: 90,
     competencyDomain: "hardware_safety",
     objectives: [
-      "Identify the 13 major physical subsystems of an industrial flatbed/hybrid printer.",
-      "Explain the operational principle of the negative pressure meniscus system and why it prevents nozzle drool and starvation.",
-      "Analyze the role of optical linear encoders and magnetic strips in carriage positioning and droplet placement accuracy.",
-      "Describe the vacuum bed zoning system and media hold-down mechanics."
+      "Group common printer functions into job processing, motion or transport, imaging, materials, curing or drying where present, controls, and safety.",
+      "Explain why printhead, ink, curing, media-handling, and utility configurations vary across models and options.",
+      "Gather model, serial, configuration, software, and symptom records before applying product-specific guidance.",
+      "Separate conceptual observation from an authorized service action.",
     ],
-    prerequisites: ["Day 2-3 workflow and safety fundamentals"],
+    prerequisites: ["Days 2-3 workflow and safety fundamentals"],
     sourceRef: {
-      title: "Industrial Flatbed Printer Architecture Reference",
-      citation: "Platinum Technologies Technical Service Manuals & Subsystem Schematics",
-      confidenceLevel: "confirmed_spec",
-      notes: "Conceptual educational breakdown of industrial UV-LED flatbed architectures."
+      title: "Conceptual industrial-printer systems model and learner-provided product scope",
+      citation: "Educational synthesis; model-specific details must come from the current manufacturer manual for the exact installed equipment.",
+      confidenceLevel: "conceptual_model",
+      notes: "No Platinum model numbers, printhead brands, ink types, voltages, pressures, wavelengths, dimensions, firmware, or service procedures are asserted. Configurations vary.",
     },
     contentBlocks: [
-      {
-        sectionTitle: "Subsystem 1 to 4: Ingestion, Control & Motion",
-        blockType: "teaching",
-        contentMarkdown: `### 1. RIP & Print-Job Interface
-The bridge between the external prepress workstation and the printer. Typically utilizes Gigabit Ethernet (1000BASE-T) or dedicated fiber-optic patch links. High-bandwidth buffering is essential to prevent carriage stutter during large continuous multi-pass files.
+      section("Functional areas, not a universal parts list", `Industrial printing systems can include job-processing software, a controller, imaging components, motion or media transport, material supply, curing or drying technology, sensors, and safety controls. The exact architecture varies by device, product generation, options, and customer configuration.
 
-### 2. Main Printer Controller (CPU & FPGA Board)
-The brain of the machine. The controller synchronizes:
-- Motion interpolation (X-axis carriage travel, Y-axis media advance or gantry drive).
-- Firing waveform generation via Field Programmable Gate Arrays (FPGA) that blast high-frequency clock pulses to printhead drive boards.
-- System health monitoring (vacuum levels, ink tank float switches, UV temperatures).
+A system diagram is useful for organizing questions. It must not be treated as a bill of materials or an invitation to open a cabinet, adjust an assembly, or replace a component.`),
+      section("Follow the installed configuration", `Begin by identifying the manufacturer, exact model, serial number, installed options, software or firmware version, materials in use, and relevant job settings from reliable records. Confirm that each is appropriate for the question and permitted by the site.
 
-### 3. Sensors, Interlocks & E-Stop Loops
-Hardware-redundant safety circuits incorporating:
-- Emergency stop pushbuttons (normally-closed dual-channel safety relays).
-- Mechanical crash sensors (\"head-strike bars\") on both sides of the carriage that instantly stop motion if substrate curl is detected.
-- Optical beam breaks and cover interlocks.
+Terms such as “flatbed,” “hybrid,” “UV,” “aqueous,” “vacuum,” or a named printhead are not sufficient to infer the remaining specifications. Even products within one family can differ. Use the exact current operator or service documentation and contact the manufacturer or authorized service organization when it is missing.`, "visual_explanation"),
+      section("Observe before assigning a cause", `A symptom may involve several layers: job data, device configuration, material handling, environment, motion, imaging, or a safety/control state. Capture the displayed status, reproduce the symptom only when safe and authorized, record material and job identity, and compare with the approved diagnostic target.
 
-### 4. Carriage Motion & Drive System
-Carries printheads, sub-tanks, UV lamps, and leveling sensors across the X-axis:
-- High-precision linear guideways (THK or HIWIN ball-bearing blocks).
-- AC brushless servo motor coupled to a steel-reinforced polyurethane timing belt or magnetic linear motor drive.
-- Operating speeds reach 1.5 to 2.2 m/s with sub-micron repeatability.`
-      },
-      {
-        sectionTitle: "Subsystem 5 to 7: Encoders, Vacuum & Print Zone",
-        blockType: "teaching",
-        contentMarkdown: `### 5. Encoders & Positioning System
-- **Linear Optical/Magnetic Encoder**: A precision glass or metallic strip etched with 150 to 360 lines per inch (LPI). An optical reader head on the carriage counts transitions, providing instantaneous real-time position feedback to the motion controller.
-- *Diagnostic Importance*: A speck of dried ink, dust, or grease on the encoder strip will cause carriage jumps, scale distortion, or catastrophic gantry collisions.
+Do not probe electrical assemblies, alter motion alignment, adjust fluid pressure, clean an optical or imaging surface, or run a maintenance menu based on this conceptual overview. Those actions require the actual approved procedure and suitable authorization.`),
+      section("Synthetic case: new material, different result", `A hypothetical print shop reports that a new material produces a different edge quality. Before proposing any adjustment, compare the material identity and thickness, job revision, selected media configuration, device status, and approved reference test. Ask what changed and whether the new material is supported by the installed configuration.
 
-### 6. Vacuum Bed & Substrate Handling
-Heavy milled aluminum honeycomb or ribbed plate divided into multiple selectable vacuum zones:
-- High-flow regenerative blowers pull air through thousands of micro-orifices.
-- Holds rigid substrates (acrylic, glass, wood, aluminum composites) perfectly flat.
-- *Air Masking*: Any open vacuum holes not covered by media must be masked with paper or scrap material to prevent loss of static vacuum pressure.
+Record which observations are confirmed and what remains unknown. If the model-specific handling or safety limits are not available, pause and request the current manual or technical support.`, "field_example"),
+      section("Practice: model-specific evidence checklist", `Create a short checklist with six items: model/serial, installed options, software version, material, displayed status, and applicable manual or support reference. Mark “unknown” when a record is not available instead of filling in a plausible-looking value.
 
-### 7. Print Zone & Height Adjustment (Z-Axis)
-Automated carriage height adjustment:
-- Driven by precision lead screws and stepper motors.
-- Ultrasonic or optical distance sensors measure the substrate surface.
-- Standard head gap is typically set between **1.0 mm and 1.8 mm**. Exceeding 2.0 mm causes ink misting, droplet deflection, and poor edge definition.`
-      },
-      {
-        sectionTitle: "Subsystem 8 to 11: Ink Delivery & Negative Pressure",
-        blockType: "teaching",
-        contentMarkdown: `### 8. Ink Reservoirs (Bulk Supply)
-Main 1-liter to 5-liter tanks equipped with:
-- Mechanical float switches or capacitive level sensors to warn operators before ink runs dry.
-- Agitation motors for White ink: Titanium dioxide (TiO₂) pigments are dense and will settle out of suspension within hours if not continuously stirred.
-
-### 9. Ink Delivery Lines & Sub-Tanks
-- Solvent- and UV-resistant PTFE or fluoropolymer tubing routed through dynamic drag chains.
-- Dedicated sub-tanks mounted directly above the printheads on the carriage.
-
-### 10. Negative Pressure (Meniscus) System
-**The most critical hydraulic concept in industrial inkjet:**
-- To prevent ink from drooling out of hundreds of nozzles under gravity, the sub-tank is maintained under slight vacuum (typically **-2.0 to -4.5 kPa** or -20 to -45 mbar).
-- This creates an inward surface-tension curve (meniscus) at every nozzle orifice.
-- If negative pressure is **too weak** (closer to 0), ink drools and drips onto media.
-- If negative pressure is **too strong** (excessive vacuum), air is ingested into the nozzle chambers, leading to immediate ink starvation and complete nozzle failure.`
-      },
-      {
-        sectionTitle: "Subsystem 12 & 13: Printheads & UV Curing",
-        blockType: "teaching",
-        contentMarkdown: `### 11. Printheads & Nozzle Plates
-Industrial drop-on-demand piezoelectric printheads (e.g. Ricoh Gen5/Gen6, Kyocera KJ4A, Konica Minolta 1024i):
-- Contain hundreds or thousands of microscopic nozzles (orifices ~20-30 microns in diameter).
-- Piezo actuators expand and contract when energized by custom electrical waveforms, ejecting controlled picoliter droplets.
-
-### 12. UV Curing Systems
-Mounted on one or both wings of the carriage:
-- High-intensity UV-LED arrays (typically 395nm wavelength) or mercury vapor arc lamps.
-- Water-chilled or high-speed air-cooled heat exchangers.
-- Irradiance levels reach **8 to 16 W/cm²** to instantly polymerize monomers.
-
-### 13. Finished Output & Post-Cure Inspection
-The physical board or roll exiting the print zone, ready for adhesion cross-hatch testing, optical inspection, and spectrophotometric measurement.`
-      },
-      {
-        sectionTitle: "Annotated Visual: The Negative Pressure Meniscus",
-        blockType: "visual_explanation",
-        contentMarkdown: `### Cross-Section of Piezoelectric Nozzle Meniscus State
-
-\`\`\`
-  [ Balanced Meniscus: -3.2 kPa ]           [ Weak Vacuum: -0.5 kPa ]           [ Excessive Vacuum: -8.0 kPa ]
-      ┌───────────────────────┐                 ┌───────────────────────┐           ┌───────────────────────┐
-      │      Liquid Ink       │                 │      Liquid Ink       │           │      Liquid Ink       │
-      │                       │                 │                       │           │                       │
-      └───────┐       ┌───────┘                 └───────┐       ┌───────┘           └───────┐       ┌───────┘
-              │ ) (   │ (Inward Curve)                  │ (   ) │ (Bulging)                 │   ▲   │ (Air Ingestion)
-              └───┴───┘                                 └───┴───┘                           └───┴───┘
-          STABLE FIRING                             INK DRIPPING/DROOLING               NOZZLE STARVATION / DE-PRIME
-\`\`\`
-
-**Field Takeaway**: Whenever a customer complains that \"all black nozzles suddenly disappeared during high-speed printing,\" check the sub-tank vacuum gauge first before blaming the printhead!`
-      },
-      {
-        sectionTitle: "Interactive Practice & Realistic Example",
-        blockType: "field_example",
-        contentMarkdown: `### Field Case #104: The Ghost Droplet Collision
-**Complaint:** A print shop reported that midway through large 4x8 ft acrylic prints, the carriage would violently shutter and stop with an \"Encoder Position Error.\"
-
-**Investigation:**
-1. The technician inspected the linear optical encoder strip located behind the gantry rail.
-2. Under 10x loupe magnification, a dried smudge of white UV ink mist was visible at the 48-inch mark.
-3. When the optical reader head passed this smudge, it lost pulse count, causing the servo drive to detect a position discrepancy and trigger an emergency stop.
-4. Cleaned the glass strip with optical lint-free swabs and anhydrous isopropyl alcohol. Re-calibrated home sensor.
-
-**Result:** Zero errors over a 24-hour continuous production run.`
-      }
+The purpose is to prepare for a reliable diagnosis, not to infer a specification from another device.`, "interactive_practice"),
+      section("Summary", `The useful skill is not memorizing a universal printer architecture. It is identifying functional relationships while verifying the actual device. Features, consumables, service steps, and acceptance values require current model-specific support.`, "summary_review"),
     ],
     questions: [
-      {
-        text: "What is the primary function of maintaining negative pressure in an industrial printhead sub-tank?",
-        domain: "hardware_safety",
-        explanation: "Negative pressure creates a concave ink meniscus at the nozzle orifice, preventing gravity drooling while keeping nozzles primed for firing.",
-        options: [
-          { text: "It creates an inward surface tension (meniscus) at each nozzle, preventing ink from drooling while allowing piezo droplet ejection.", isCorrect: true, explanation: "Correct. Negative pressure balances gravity against surface tension." },
-          { text: "It heats the ink to 80 degrees Celsius to reduce drying time.", isCorrect: false, explanation: "Incorrect. Temperature is regulated by dedicated head heaters, not negative pressure." },
-          { text: "It pushes ink backward into the main bulk bottles during printing.", isCorrect: false, explanation: "Incorrect." },
-          { text: "It grounds electrical static charges from the substrate.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "What symptom will occur if negative pressure in the sub-tank becomes excessively strong (too much vacuum, e.g. -10 kPa)?",
-        domain: "hardware_safety",
-        explanation: "Excessive vacuum pulls air backward into the nozzle chamber, de-priming the printhead and causing immediate ink starvation and missing nozzles.",
-        options: [
-          { text: "Ink will vigorously drip from the nozzle plate onto the media.", isCorrect: false, explanation: "That occurs with insufficient vacuum (positive pressure)." },
-          { text: "Air will be ingested through the nozzles into the printhead chambers, causing cavitation, de-priming, and ink starvation.", isCorrect: true, explanation: "Correct. High negative pressure sucks air past the nozzle meniscus." },
-          { text: "The UV curing lamp will burn out immediately.", isCorrect: false, explanation: "Incorrect; lamps are unrelated to ink hydraulics." },
-          { text: "The carriage will move in the reverse direction.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "Why is continuous mechanical agitation or circulation mandatory for White UV ink channels?",
-        domain: "hardware_safety",
-        explanation: "White ink relies on dense Titanium Dioxide (TiO2) particles that settle to the bottom if unagitated, causing severe clogs and density shifts.",
-        options: [
-          { text: "Because White ink contains Titanium Dioxide (TiO2) pigment particles that settle out of suspension, leading to clogging and uneven density.", isCorrect: true, explanation: "Correct. TiO2 is heavy and requires constant stirring/circulation." },
-          { text: "Because White ink catches fire if stationary for more than 5 minutes.", isCorrect: false, explanation: "Incorrect." },
-          { text: "Because White ink must be aerated with air bubbles to cure.", isCorrect: false, explanation: "Air bubbles in ink ruin printing." },
-          { text: "Because White ink contains live bacteria.", isCorrect: false, explanation: "Absurd." }
-        ]
-      },
-      {
-        text: "What will happen if the optical linear encoder strip becomes contaminated with ink mist or dust?",
-        domain: "hardware_safety",
-        explanation: "The reader head cannot count optical transitions accurately, resulting in droplet misplacement, vertical banding, or servo position faults.",
-        options: [
-          { text: "The printer will automatically switch to Wi-Fi mode.", isCorrect: false, explanation: "Incorrect." },
-          { text: "The carriage will misread its position, causing droplet misplacement, banding, scale errors, or carriage servo crash faults.", isCorrect: true, explanation: "Correct. The encoder provides closed-loop position timing." },
-          { text: "The vacuum bed suction will increase by 40%.", isCorrect: false, explanation: "Incorrect." },
-          { text: "The RIP will convert all colors to grayscale.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "What is the typical recommended head-gap distance between the printhead nozzle plate and the media surface on an industrial flatbed?",
-        domain: "hardware_safety",
-        explanation: "Standard industrial head gap is 1.0 mm to 1.8 mm; larger gaps increase droplet misting and deflection, while smaller gaps risk head strikes.",
-        options: [
-          { text: "1.0 mm to 1.8 mm", isCorrect: true, explanation: "Correct. This balances drop placement accuracy against substrate collision risk." },
-          { text: "10 mm to 15 mm", isCorrect: false, explanation: "Far too high; droplets will become diffuse mist before hitting the substrate." },
-          { text: "0.05 mm (paper-thin contact)", isCorrect: false, explanation: "Extremely dangerous; almost guarantees fatal head strikes on rigid media." },
-          { text: "50 mm", isCorrect: false, explanation: "Incorrect." }
-        ]
-      }
-    ]
+      question("Why should a technician record the exact printer model and installed options?", "hardware_safety", "Because architecture, supported materials, procedures, and specifications can differ between models and configurations.", "A product-family label alone is not enough to select a safe, relevant procedure.", [
+        { text: "To assume that every model in a family has identical parts.", explanation: "The point is to avoid assuming configurations are identical." },
+        { text: "To avoid consulting the current manual.", explanation: "Exact identification helps locate the applicable documentation." },
+        { text: "To guarantee that a reported symptom is a hardware fault.", explanation: "Model identification does not establish the cause." },
+      ]),
+      question("What does a conceptual subsystem map provide?", "hardware_safety", "A way to organize questions about functions and evidence; it is not a service manual or universal bill of materials.", "Conceptual models support reasoning but do not authorize service work.", [
+        { text: "A complete list of parts and settings for every Platinum printer.", explanation: "No universal part list is implied." },
+        { text: "Authorization to probe inside a live electrical cabinet.", explanation: "An educational diagram cannot authorize hazardous work." },
+        { text: "Proof that a printer uses one specific ink or curing technology.", explanation: "That depends on the exact model and installed options." },
+      ]),
+      question("A device shows an unfamiliar service message. What should you do?", "hardware_safety", "Record the message and exact model/version, then consult the current approved documentation or authorized support.", "A status message should be interpreted against the installed product and its documentation.", [
+        { text: "Search for a similar phrase and run the first maintenance menu found.", explanation: "A procedure for another model or version may be wrong or unsafe." },
+        { text: "Replace the nearest-looking component.", explanation: "A status message does not justify part replacement." },
+        { text: "Disable a safety sensor to see whether the message clears.", explanation: "Safety devices must not be defeated to diagnose a message." },
+      ]),
+      question("Which statement about print technology is best supported by this lesson?", "hardware_safety", "Technology, ink, curing, transport, and utilities can differ by model and configuration.", "The course avoids applying a single architecture or specification across a product family.", [
+        { text: "Every Platinum printer uses the same head, ink, and curing system.", explanation: "That is an unsupported family-wide claim." },
+        { text: "Every industrial printer has the same printhead brands and pressures.", explanation: "Those values are model-specific and were not asserted." },
+        { text: "All device service menus use identical procedures.", explanation: "Menus and procedures vary by product and software version." },
+      ]),
+      question("If the applicable safety procedure is missing, what is the correct next step?", "hardware_safety", "Stop the task and obtain the correct procedure and competent authorization before proceeding.", "Missing safety information is a stop-work condition, not a reason to improvise.", [
+        { text: "Use a procedure from a visually similar machine.", explanation: "Similarity does not establish equivalent hazards or controls." },
+        { text: "Let the customer choose an unverified repair step.", explanation: "Customer urgency does not replace authorization." },
+        { text: "Proceed carefully without checking the energy sources.", explanation: "Caution alone does not control hazardous energy." },
+      ]),
+    ],
   },
-
-  // DAY 5
   {
     dayNumber: 5,
     bootcampDayNumber: 2,
-    title: "Inkjet Troubleshooting and Print Defect Isolation",
+    title: "Print-Defect Reasoning and Safe Fault Isolation",
     slug: "day-05-inkjet-troubleshooting-and-print-defect-isolation",
-    summary: "Systematic diagnosis of horizontal banding, missing nozzles, deflected jets, bidirectional misregistration, media feed calibration, and curing artifacts.",
+    summary: "Compare nozzle-pattern, feed, alignment, job, material, and intermittent possibilities without treating one visual symptom or one clean test as a complete diagnosis.",
     estimatedMinutes: 90,
     competencyDomain: "hardware_safety",
     objectives: [
-      "Distinguish horizontal banding caused by missing nozzles from banding caused by media advance miscalibration.",
-      "Diagnose printhead nozzle plate conditions: physical clogs, air ingestion, electrical drive failures, and mechanical deflection.",
-      "Execute systematic recovery procedures: purge cycles, capping seals, ultrasonic bath limitations, and solvent wiping.",
-      "Calibrate bidirectional printing alignment and step feed advance."
+      "Describe multiple plausible causes of banding and distinguish a visual clue from a confirmed cause.",
+      "Explain why a clean nozzle check does not rule out every printhead or dynamic fault.",
+      "Plan a safe sequence of authorized, low-impact evidence gathering and controlled comparisons.",
+      "Define what to record and when to stop for manufacturer guidance.",
     ],
-    prerequisites: ["Day 4 printer architecture and hydraulics"],
+    prerequisites: ["Days 3-4 safety and conceptual printer-system foundations"],
     sourceRef: {
-      title: "Field Diagnostic Guide for Industrial Inkjet Defect Isolation",
-      citation: "CGS ORIS Technical Training & Print Quality Engineering Guidelines",
-      confidenceLevel: "confirmed_spec",
-      notes: "Defect taxonomy and systematic isolation rules."
+      title: "General print-defect isolation principles",
+      citation: "Conceptual educational material. Use the exact printer's current operator/service documentation for tests, maintenance, limits, and corrective actions.",
+      confidenceLevel: "conceptual_model",
+      notes: "No nozzle count, pressure, feed compensation, alignment value, cleaning fluid, purge sequence, replacement threshold, or universal dark/light band rule is supplied.",
     },
     contentBlocks: [
-      {
-        sectionTitle: "Defect Taxonomy: Categorizing Print Faults",
-        blockType: "teaching",
-        contentMarkdown: `### The Golden Diagnostic Rule: Symptom First, Never Assume
+      section("Banding is a symptom, not a root cause", `Banding can originate in different parts of a production chain. Possibilities include a missing or deflected nozzle, an intermittent imaging or firing problem, media movement, pass or alignment settings, job data, substrate behavior, or an environmental/process change. A dark or light appearance can help describe the symptom but does not uniquely identify its cause.
 
-When an operator says \"the printer is banding,\" that statement tells you almost nothing. Banding has multiple distinct root causes across entirely different subsystems.
+Start with the direction, spacing, repeatability, affected colors, coverage, job, and material. Compare a fresh sample with the source file and an approved device test. Preserve both the original and the test results.`),
+      section("Interpret a nozzle pattern cautiously", `A nozzle or diagnostic pattern can reveal a visible dropout or deflection under that test condition. It is useful evidence, not proof that every nozzle, firing condition, or dynamic behavior is fault-free. A clean pattern therefore does not rule out every head, electrical, intermittent, configuration, or production-speed issue.
 
-#### 1. Horizontal Banding (In the Direction of Carriage Travel)
-- **White lines (voids)**: One or more nozzles are completely missing or severely deflected.
-- **Dark overlap lines**: Media feed is advancing *too little*, causing successive carriage passes to overlap.
-- **Light underlap lines**: Media feed is advancing *too much*, creating a gap between successive carriage passes.
-- *Critical Diagnostic Test*: **Run a standard nozzle check pattern.**
-  - If nozzles are missing: Fix the hydraulic/nozzle issue.
-  - If ALL nozzles are 100% firing: **It is impossible for missing nozzles to cause the banding!** The fault is in **Media Advance / Step Calibration** or **Bidirectional Alignment**.
+If the pattern indicates a problem, follow only the exact approved maintenance or service instruction for the installed model and your role. Do not scrape a nozzle plate, choose a cleaning fluid, force a purge, disconnect a head, or replace a component from advice in this lesson.`, "visual_explanation"),
+      section("A controlled diagnostic sequence", `1. Clarify the customer-visible defect and its operational impact.
+2. Check safety, task scope, and authorization before testing.
+3. Record the device identity, job revision, media, settings, status messages, and recent changes.
+4. Use documented, approved diagnostic patterns and controlled comparisons; change one variable at a time.
+5. Compare observations with a reference and consider alternative explanations.
+6. Stop and escalate when a procedure, hazard control, or qualification is missing.
+7. Verify only against the customer's agreed criteria, then document the evidence and uncertainty.`, "teaching"),
+      section("Synthetic case: regular dark bands, clean static pattern", `A hypothetical customer sees regularly spaced dark bands, while a static diagnostic pattern appears clean. The pattern reduces support for one visible static dropout under that test condition, but it does not eliminate every printhead or dynamic fault. Other hypotheses may include media movement, pass alignment, job data, material response, or a condition that appears only during production.
 
-#### 2. Vertical Banding (Perpendicular to Carriage Travel)
-- Encoder strip dirty or damaged at regular intervals.
-- Gantry rail bearing wear causing periodic carriage oscillation.
-- Grounding interference or electrical noise on the head cable data bus.
+Ask what changed, preserve the job and material details, run only approved comparisons, and avoid announcing a root cause until the evidence supports one.`, "field_example"),
+      section("Practice: build a hypothesis table", `For the case, make three columns: hypothesis, discriminating safe test from the current manual, and result that would support or weaken the hypothesis. Include at least two competing explanations. If you cannot name an approved test, write “escalate for test procedure” rather than inventing a menu or setting.
 
-#### 3. Graininess and Fuzzy Edge Text
-- Head gap too high (> 2.0 mm), causing aerodynamic droplet dispersion.
-- Bidirectional timing offset: Left-to-right pass dots do not align with right-to-left pass dots.`
-      },
-      {
-        sectionTitle: "Nozzle Health: Clogs vs Air vs Electrical vs Deflection",
-        blockType: "teaching",
-        contentMarkdown: `### The Four States of Nozzle Failure
-
-1. **Dried Ink / Physical Clog**
-   - *Cause*: Solvent evaporation, UV ambient light leakage onto the nozzle plate, or particulate contamination.
-   - *Recovery*: Controlled positive-pressure purge, capping station solvent soak with lint-free polyester swabs.
-
-2. **Air Ingestion (Cavitation)**
-   - *Cause*: Excessive sub-tank vacuum, loose Luer-lock ink fittings, or running an ink tank completely dry.
-   - *Behavior*: Nozzles fire for 2 seconds, then abruptly drop out during printing as micro-bubbles expand.
-   - *Recovery*: Draw ink through the printhead with a syringe or perform a soft reverse flush to evacuate air.
-
-3. **Deflected Nozzles (Misfiring Angles)**
-   - *Cause*: A tiny fiber or dried crust of ink clinging to the perimeter of the nozzle orifice pushes the flying drop sideways.
-   - *Result*: Instead of dropping into a straight matrix, it creates a thin void and an adjacent dark speckle.
-   - *Recovery*: Gentle lint-free wipe with recommended flush solvent. Never use abrasive swabs or metal scrapers!
-
-4. **Electrical / Driver Failure**
-   - *Cause*: Blown head driver chip, cracked flat flex cable (FFC), or damaged PZT crystal.
-   - *Behavior*: An entire block of 64 or 128 nozzles drops out simultaneously in a sharp geometric rectangle.`
-      },
-      {
-        sectionTitle: "Media Advance (Step) and Bidirectional Calibration",
-        blockType: "teaching",
-        contentMarkdown: `### Step Calibration Mechanics
-On flatbed printers, the gantry steps forward across the Y-axis. On hybrid/roll printers, drive pinch rollers advance the substrate.
-
-- If the media moves **10.02 mm** when the controller calculates **10.00 mm**, after 10 passes the error is 0.2 mm—enough to create severe white gap banding.
-- Every media thickness, surface friction, and roll weight requires its own **Feed Compensation Factor**. Heavy vinyl rolls have more inertia than lightweight polyester film.
-
-### Bidirectional Alignment
-In bidirectional printing, the carriage fires drops traveling Left-to-Right AND Right-to-Left. Because of flight time (the time it takes a drop to travel from nozzle to paper while moving at 1.5 m/s), firing pulses must be timed in microseconds.
-- An offset of just 15 microseconds creates a visible double-image or fuzzy edges on vertical lines.`
-      },
-      {
-        sectionTitle: "Annotated Visual: Defect Isolation Decision Flow",
-        blockType: "visual_explanation",
-        contentMarkdown: `### Systematic Banding Isolation Matrix
-
-\`\`\`
-                 [ Symptom: Horizontal Banding on Output ]
-                                     │
-                                     ▼
-                        [ Action: Print Nozzle Check ]
-                                     │
-                   ┌─────────────────┴─────────────────┐
-                   ▼                                   ▼
-        [ Missing Nozzles Visible ]           [ Nozzle Check 100% Perfect ]
-                   │                                   │
-                   ├── Perform Gentle Purge            ├── Print Step / Feed Test Target
-                   ├── Inspect Wiper Blade & Cap       ├── Examine Bands: Overlap or Gap?
-                   ├── Check Sub-tank Negative Press   └── Adjust Media Feed Compensation
-                   └── Re-test Nozzle Check
-\`\`\`
-
-**Never touch printhead mechanical alignment until hydraulic and feed calibration are ruled out.**`
-      },
-      {
-        sectionTitle: "Realistic Field Case Example",
-        blockType: "field_example",
-        contentMarkdown: `### Field Case #105: The \"Broken\" Ricoh Gen5 Printhead
-**Complaint:** Customer was convinced their Magenta printhead had failed because prints exhibited heavy horizontal streaking. They had already ordered an expensive replacement head.
-
-**FST Investigation:**
-1. Printed a nozzle test pattern: All magenta nozzles were firing 100% cleanly without a single missing or deflected jet.
-2. The technician inspected the substrate: The customer was running 1/2-inch thick dense wood panels on the flatbed.
-3. Because the heavy panels exerted high friction against the gantry drive belt, the Y-axis feed was slipping by 0.08 mm per pass, creating dark overlap lines.
-4. Cleaned the Y-axis drive teeth, tightened the belt to factory torque spec, and updated the media feed step value by +0.6%.
-
-**Result:** Banding vanished completely. The customer cancelled the unnecessary head purchase, saving thousands of dollars.`
-      },
-      {
-        sectionTitle: "Summary & Review",
-        blockType: "summary_review",
-        contentMarkdown: `### Key Diagnostic Principles
-- **Nozzle check first**: Always separate nozzle health from feed calibration.
-- **Dark bands = Overlap (Feed too short)**.
-- **Light/White bands = Underlap (Feed too long)** or missing nozzles.
-- **Never scrape a nozzle plate**: Microscopic polyimide nozzle coatings are easily scratched, permanently ruining the head.`
-      }
+This is fault isolation, not a repair recipe.`, "interactive_practice"),
+      section("Summary", `Visual patterns guide questions; they do not prove causes. A clean nozzle check is informative but not conclusive. Separate observations from hypotheses, use approved tests, change one variable at a time, and verify the outcome against agreed requirements.`, "summary_review"),
     ],
     questions: [
-      {
-        text: "A customer reports horizontal banding across full-color prints. The technician prints a nozzle check, and EVERY nozzle in all colors fires with 100% perfection. What is the most probable cause?",
-        domain: "hardware_safety",
-        explanation: "If the nozzle check is 100% clean, missing nozzles cannot be the cause; the fault lies in media advance (step feed) miscalibration or bidirectional timing.",
-        options: [
-          { text: "The printheads are completely clogged and must be soaked in acetone.", isCorrect: false, explanation: "Acetone will dissolve printhead adhesives and destroy the head; plus, the nozzles are already firing perfectly." },
-          { text: "Media advance (step) calibration is incorrect, or bidirectional alignment is out of sync.", isCorrect: true, explanation: "Correct. Step feed errors produce horizontal banding even when 100% of nozzles fire." },
-          { text: "The ink has expired.", isCorrect: false, explanation: "Expired ink causes adhesion or color issues, not mechanical band spacing." },
-          { text: "The main incoming AC voltage is too high.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "In horizontal banding, what does a periodic DARK line indicate regarding media advance?",
-        domain: "hardware_safety",
-        explanation: "A dark line indicates that the media did not advance far enough, causing successive carriage passes to overlap and deposit a double layer of ink.",
-        options: [
-          { text: "The media advanced too far, leaving an unprinted gap.", isCorrect: false, explanation: "That produces a light or white line." },
-          { text: "The media did not advance far enough, causing successive print swaths to overlap and deposit excess ink.", isCorrect: true, explanation: "Correct. Overlap creates a dark line." },
-          { text: "The UV lamps were extinguished during that pass.", isCorrect: false, explanation: "That would cause liquid, uncured ink, not a dark line." },
-          { text: "The yellow printhead is running backward.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "If a specific block of exactly 64 adjacent nozzles in a single channel drops out instantly in a razor-sharp geometric pattern, what is the most likely failure mode?",
-        domain: "hardware_safety",
-        explanation: "Geometric block dropouts correspond to electrical driver chip, ribbon cable trace, or board connector failures rather than physical particulate clogs.",
-        options: [
-          { text: "A physical piece of lint blocking exactly 64 nozzles.", isCorrect: false, explanation: "Physical lint creates irregular, jagged dropouts." },
-          { text: "An electrical failure: damaged flat flex cable trace, blown driver ASIC channel, or loose head-board connection.", isCorrect: true, explanation: "Correct. Sharp geometric blocks indicate electrical/driver bus faults." },
-          { text: "The room humidity dropped by 2%.", isCorrect: false, explanation: "Incorrect." },
-          { text: "The RIP ran out of disk space.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "Why should a technician never use paper towels, standard cotton swabs, or metal tools to wipe an industrial printhead nozzle plate?",
-        domain: "hardware_safety",
-        explanation: "Nozzle plates have delicate microscopic anti-wetting coatings. Abrasive materials cause micro-scratches that deflect nozzles permanently.",
-        options: [
-          { text: "Because the paper towel will absorb all the electrical charge from the printer.", isCorrect: false, explanation: "Incorrect." },
-          { text: "Because abrasive fibers and metal tools will scratch the delicate anti-wetting coating, causing permanent nozzle deflection.", isCorrect: true, explanation: "Correct. Only dedicated lint-free polyester swabs and approved fluids should be used." },
-          { text: "Because cotton swabs can cause the UV lamps to explode.", isCorrect: false, explanation: "Incorrect." },
-          { text: "Because OSHA bans cotton in printing facilities.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "What is the primary indicator of a 'deflected' nozzle as opposed to a 'missing' nozzle on a test pattern?",
-        domain: "hardware_safety",
-        explanation: "A missing nozzle leaves a gap, while a deflected nozzle fires at an angle, placing its drop into the adjacent line and leaving a void on one side with a dark collision on the other.",
-        options: [
-          { text: "A deflected nozzle fires at an improper angle, producing an irregular line that encroaches on its neighbor.", isCorrect: true, explanation: "Correct. Angle deflection distorts the test grid without completely disappearing." },
-          { text: "A deflected nozzle only prints in black ink.", isCorrect: false, explanation: "Incorrect." },
-          { text: "A deflected nozzle produces loud clicking sounds from the carriage.", isCorrect: false, explanation: "Incorrect." },
-          { text: "A deflected nozzle causes the printer to reboot.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      }
-    ]
+      question("A clean static nozzle pattern is observed. What does it establish?", "hardware_safety", "That the pattern looked clean under that specific test condition; it does not rule out every printhead or dynamic fault.", "A static pattern is one piece of evidence, not a complete test of all operating conditions.", [
+        { text: "That all head-related faults are impossible.", explanation: "Intermittent, dynamic, and other head-related faults may not appear in one static test." },
+        { text: "That media advance is definitely the root cause.", explanation: "The test does not prove a different subsystem is at fault." },
+        { text: "That the printer is safe to service without the applicable procedure.", explanation: "A print-quality test is not an energy-control procedure." },
+      ]),
+      question("What is the correct way to interpret periodic banding?", "hardware_safety", "Record its appearance and compare several plausible causes using approved, discriminating tests.", "Banding is a symptom with multiple possible causes; a visual description alone is not a diagnosis.", [
+        { text: "Every dark band means exactly the same feed error.", explanation: "Appearance alone does not uniquely identify a cause." },
+        { text: "Every white band means a clogged nozzle.", explanation: "Missing/deflected output is one possibility, not the only one." },
+        { text: "Replace a printhead before gathering evidence.", explanation: "Part replacement is not justified by an unconfirmed symptom." },
+      ]),
+      question("Which is an appropriate initial evidence record for a print defect?", "hardware_safety", "Device identity, job revision, material, settings, status, recent changes, and the observed pattern.", "Context allows repeatable comparison and prevents unsupported assumptions.", [
+        { text: "Only the technician's favorite hypothesis.", explanation: "A hypothesis is not an observation record." },
+        { text: "Only a customer estimate of the replacement cost.", explanation: "Cost matters operationally but does not identify the fault." },
+        { text: "An assumed model and a guessed pressure value.", explanation: "Unknown configuration values should be recorded as unknown." },
+      ]),
+      question("Why should a diagnostic test change one variable at a time where practicable?", "hardware_safety", "It helps associate an observed change with a particular controlled test.", "Changing multiple variables at once makes the result harder to interpret.", [
+        { text: "It guarantees that the first hypothesis was correct.", explanation: "A controlled test can still disconfirm a hypothesis." },
+        { text: "It removes the need to verify customer acceptance.", explanation: "Verification remains necessary." },
+        { text: "It permits bypassing an interlock for cleaner results.", explanation: "A safety device must never be defeated for a test." },
+      ]),
+      question("The manual for the exact model is unavailable and a proposed test could affect a head. What should you do?", "hardware_safety", "Do not invent the procedure; stop and obtain authorized model-specific guidance.", "Maintenance steps and consumables are product-specific and must be authorized.", [
+        { text: "Try a cleaning fluid from a different manufacturer.", explanation: "Chemical compatibility and procedure are not established." },
+        { text: "Scrape deposits away with a soft metal tool.", explanation: "This is an unsupported, potentially damaging action." },
+        { text: "Run multiple high-pressure purges to see what happens.", explanation: "An unapproved purge can create damage or additional hazards." },
+      ]),
+    ],
   },
-
-  // DAY 6
   {
     dayNumber: 6,
-    bootcampDayNumber: 2,
-    title: "Networking, RIPs, and Print Job Pipeline",
+    title: "RIP, Job Queues, and Network Troubleshooting",
     slug: "day-06-networking-rips-and-print-jobs",
-    summary: "Troubleshoot network communication, Gigabit Ethernet, RIP spooler stalls, corrupted raster buffers, port conflicts, and large file transmission.",
+    summary: "Use a layered approach to stalled or interrupted print jobs while distinguishing file processing, queue, controller, and network evidence.",
     estimatedMinutes: 90,
     competencyDomain: "hardware_safety",
     objectives: [
-      "Configure static IP addressing, subnets, and dedicated print network cards.",
-      "Diagnose print queue stalls, buffer underruns, and RIP temp scratch-disk exhaustion.",
-      "Differentiate between network physical layer faults, IP routing conflicts, and RIP licensing errors.",
-      "Trace a job from PDF spooling to printer memory buffering."
+      "Sketch the configured job path from workstation to output device without assuming a particular RIP or topology.",
+      "Distinguish file/preflight, processing, queue, communications, and device-status evidence.",
+      "Plan safe, authorized observations before changing network or workstation settings.",
+      "Document job identifiers, timestamps, errors, and escalation evidence while protecting credentials and customer data.",
     ],
-    prerequisites: ["Day 2 workflow knowledge"],
+    prerequisites: ["Day 2 workflow and Day 4 conceptual printer systems"],
     sourceRef: {
-      title: "Industrial Print Controller Networking Standards",
-      citation: "IEEE 802.3 Ethernet & CGS ORIS Systems Integration Guidelines",
-      confidenceLevel: "industry_standard",
-      notes: "Networking, spooler architectures, and RIP communication protocols."
+      title: "General networked-application troubleshooting concepts",
+      citation: "Internet Engineering Task Force, RFC 9293 — Transmission Control Protocol: https://www.rfc-editor.org/rfc/rfc9293; consult the actual RIP, operating-system, and device documentation for configuration.",
+      confidenceLevel: "protocol_reference_and_conceptual_model",
+      notes: "No specific RIP, NIC count, IP range, switch, disk path, frame size, command, or vendor error code is assumed.",
     },
     contentBlocks: [
-      {
-        sectionTitle: "Physical and Logical Network Topology",
-        blockType: "teaching",
-        contentMarkdown: `### Isolating the Print Engine Network
+      section("Map the actual job path", `A typical print path may include a design or prepress workstation, a configured RIP or job processor, a queue or spool, a communications path, and a device controller. Product boundaries vary. First identify the applications, versions, hosts, queues, and interfaces actually in use.
 
-In an industrial print shop, **never connect a production printer to the general office network or corporate Wi-Fi.**
+Capture where the job stops: before submission, during processing, in a queue, during transfer, or after the device reports receipt. A job stuck at a progress percentage does not by itself identify disk, network, software, or hardware as the cause.`),
+      section("Separate observations by layer", `- **File:** Does the job open and pass the configured preflight checks?
+- **Processing:** Is the application still rendering or reporting an error?
+- **Queue:** Is the job paused, held, or waiting for another job?
+- **Communication:** Do the approved status tools show a connection or transfer error?
+- **Device:** What status or error does the device itself report?
+- **Resources:** Is there documented evidence of a constrained system resource?
 
-#### Recommended Dedicated Dual-NIC Architecture:
-The RIP workstation should contain **two physical Network Interface Cards (NICs)**:
-- **NIC 1 (House/Corporate LAN)**: Connected to client network for receiving incoming customer artwork, design files, and cloud ORIS license authentication. (e.g., DHCP or 192.168.1.xxx).
-- **NIC 2 (Dedicated Printer Subnet)**: Direct Cat6/Cat7 shielded patch cable to the Platinum printer controller with **Static IP** on an isolated subnet (e.g., 10.0.0.1 on RIP, 10.0.0.2 on Printer; Subnet Mask: 255.255.255.0; No Gateway).
+Compare a known-good small job only when permitted and record its identity. Do not delete queues, reset network settings, disable security controls, alter addressing, install software, or collect credentials without the system owner's approval.`, "visual_explanation"),
+      section("Use timestamps and logs responsibly", `For an intermittent interruption, record the job ID, source host, time, device status, error text, and relevant software versions. Compare the host and device timelines if authorized. Keep customer files and logs within approved access and retention rules; never place passwords or secrets in a service ticket.
 
-#### Why Isolation is Essential:
-1. **Packet Collisions & Jitter**: Broadcast traffic from office PCs and streaming video can delay raster packets, causing buffer underruns where the carriage stops mid-pass.
-2. **IP Conflicts**: If an office router dynamically assigns the printer's IP to an employee's smartphone, communication crashes instantly.`
-      },
-      {
-        sectionTitle: "RIP Spooler Bottlenecks & Temp Disk Exhaustion",
-        blockType: "teaching",
-        contentMarkdown: `### What Causes a Job to Hang at \"Processing 99%\"?
+A ping or link indicator can show limited connectivity evidence; neither proves that the complete application-to-device workflow is healthy. Use the tools designated by the network or system owner.`),
+      section("Synthetic case: job does not leave the queue", `A hypothetical job remains queued while the device appears available. Ask whether other jobs or users are affected. Compare the exact queue state, processor status, error logs, host and device identity, and a controlled known-good job if authorized. If only one file fails, the issue may differ from a case in which all hosts fail.
 
-1. **Temp Drive / Scratch Disk Saturation**
-   - Ripping high-resolution 1200 DPI multi-layer packaging files or massive 3D textured METIS scans generates tens of gigabytes of raw uncompressed raster TIFF data.
-   - If the RIP's temporary scratch drive runs out of disk space, the spooler process hangs indefinitely without throwing an obvious error.
-   - *Best Practice*: Dedicated solid-state NVMe drive for the RIP scratch folder.
-
-2. **Corrupted PostScript / PDF Transparency Parsing**
-   - Complex vector clipping paths or un-flattened live transparencies can trap the RIP interpreter in an infinite memory loop.
-   - *Diagnostic Isolation*: Preflight file into PDF/X-4 or rasterize to high-res TIFF prior to sending to the RIP.
-
-3. **Software Dongle / License Server Timeouts**
-   - Modern RIPs and ORIS applications check license validity via USB dongles or cloud authentication. Periodic USB port sleep modes in Windows power-saving settings will drop the license mid-print.`
-      },
-      {
-        sectionTitle: "Buffer Underruns and Mid-Print Halts",
-        blockType: "teaching",
-        contentMarkdown: `### Carriage Pausing and \"Starvation Stops\"
-If the printer carriage suddenly stops mid-board for 3 seconds, then resumes, this is a **buffer underrun**.
-- The printhead carriage has depleted the on-board RAM buffer before the RIP workstation could feed the next raster swath over the network.
-- This creates visible dwell marks or gloss differences where the UV lamp lingered over stationary ink.
-- *Root causes*: Cat5 cable instead of Cat6, damaged RJ45 clip, 100 Mbps auto-negotiation instead of 1000 Mbps Gigabit, or heavy anti-virus background scanning on the RIP PC.`
-      },
-      {
-        sectionTitle: "Annotated Visual: Network Diagnostics Command Line",
-        blockType: "visual_explanation",
-        contentMarkdown: `### The FST Command-Line Network Toolkit
-
-\`\`\`
-[ Terminal Command ]               [ Expected Response ]               [ Diagnostic Meaning ]
-ping 10.0.0.2 -t                   Reply from 10.0.0.2: time <1ms      Physical link solid; no packet loss
-ping 10.0.0.2 -l 65500             Reply from 10.0.0.2: time 1-2ms     Jumbo frames & MTU handling intact
-arp -a                             10.0.0.2 matches Printer MAC        No IP duplicate conflict
-netstat -ano                       Port 9100 / 8080 LISTENING          Printer spooler port open & ready
-\`\`\`
-
-If \`ping\` returns intermittent *\"Request timed out\"*, replace the physical patch cable before troubleshooting printer circuit boards!`
-      },
-      {
-        sectionTitle: "Realistic Field Case Example",
-        blockType: "field_example",
-        contentMarkdown: `### Field Case #106: The 2:00 PM Daily Disconnect
-**Location:** Industrial Print Lab, St. Paul, MN.  
-**Complaint:** The printer lost connection to the RIP workstation every single day around 2:00 PM, destroying whatever board was on the bed. The customer suspected an intermittent motherboard failure.
-
-**Investigation:**
-1. Inspected network configuration: The printer was plugged into a general shop network switch rather than a dedicated NIC.
-2. Ran a network monitor: At 2:00 PM, the shop's shift-change occurred, and automated backup routines flooded the local switch with hundreds of gigabytes of NAS traffic.
-3. The switch dropped printer packets, causing a socket timeout in the printer controller.
-4. Installed a secondary dedicated PCIe Gigabit network card in the RIP workstation, ran a direct Cat6 cable to the printer with static IP 192.168.250.10/24, completely bypassing the shop network.
-
-**Result:** Zero dropped connections over subsequent months.`
-      },
-      {
-        sectionTitle: "Summary & Review",
-        blockType: "summary_review",
-        contentMarkdown: `### Network Diagnostic Checklist
-- Always use **two separate network cards** on the RIP workstation.
-- Verify Gigabit (1000 Mbps) link speed indicator LEDs on both ports.
-- Ensure Windows Power Options are set to \"High Performance\" with **USB Selective Suspend disabled**.
-- Check available disk space on the RIP scratch drive.`
-      }
+Escalate with a concise timeline and sanitized logs. Do not assume an IP conflict, full scratch disk, jumbo-frame mismatch, or any specific vendor fault without evidence.`, "field_example"),
+      section("Practice: create a handoff", `Write a five-line handoff: affected job and time; affected hosts or queues; exact observed error; authorized checks already completed; and the specific technical help requested. Mark unknowns explicitly. Redact customer content and credentials according to policy.`, "interactive_practice"),
+      section("Summary", `Troubleshoot the real configured pipeline one layer at a time. A status indicator is evidence, not proof that every layer works. Protect customer data and obtain authorization before changing a workstation or network.`, "summary_review"),
     ],
     questions: [
-      {
-        text: "Why is a dedicated secondary Network Interface Card (NIC) recommended for connecting the RIP PC directly to an industrial printer?",
-        domain: "hardware_safety",
-        explanation: "A dedicated NIC isolates high-bandwidth raster data from office network congestion, broadcast packet storms, and dynamic IP conflicts.",
-        options: [
-          { text: "To isolate high-bandwidth print data from general office traffic, preventing packet drops, latency, and IP conflicts.", isCorrect: true, explanation: "Correct. Complete network isolation ensures predictable real-time data streaming." },
-          { text: "Because printers cannot understand standard Ethernet cables.", isCorrect: false, explanation: "Incorrect; standard Ethernet is used." },
-          { text: "To allow the printer to mine cryptocurrency when idle.", isCorrect: false, explanation: "Nonsensical." },
-          { text: "To bypass state electrical codes.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "What is a 'buffer underrun' in industrial printing, and what visual defect does it typically cause?",
-        domain: "hardware_safety",
-        explanation: "A buffer underrun occurs when data transfer cannot keep up with carriage firing, causing carriage pauses that leave dwell marks or gloss banding.",
-        options: [
-          { text: "The ink tank overflows onto the vacuum bed.", isCorrect: false, explanation: "Incorrect." },
-          { text: "The printer's on-board memory runs out of raster data, causing the carriage to pause mid-pass and creating visible dwell or gloss banding.", isCorrect: true, explanation: "Correct. Data starvation halts motion while UV lamps remain on, altering finish." },
-          { text: "The RIP automatically deletes the customer's original artwork.", isCorrect: false, explanation: "Incorrect." },
-          { text: "The printhead drops down and strikes the media.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "A print job hangs at 'Ripping 98%' and never reaches the printer queue. What should the technician check first?",
-        domain: "hardware_safety",
-        explanation: "Running out of scratch disk space or encountering unhandled PDF transparency complexity commonly freezes the RIP spooler.",
-        options: [
-          { text: "Available free disk space on the RIP scratch/temp drive, and PDF transparency complexity.", isCorrect: true, explanation: "Correct. Scratch drive exhaustion stops RIP raster file generation." },
-          { text: "The negative pressure vacuum gauge on the printer.", isCorrect: false, explanation: "The printer hasn't received the file yet, so printer hydraulics are unrelated." },
-          { text: "The tension on the carriage timing belt.", isCorrect: false, explanation: "Carriage mechanics are not involved in RIP rasterization." },
-          { text: "The ambient barometric pressure.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "When testing network connectivity between a RIP workstation and a Platinum printer, what command verifies that jumbo frames are handled properly without fragmentation?",
-        domain: "hardware_safety",
-        explanation: "Using ping with packet size flags (e.g. ping <ip> -l 65500 or -l 8972) tests Maximum Transmission Unit (MTU) packet capacity.",
-        options: [
-          { text: "ping <ip_address> -l 65500 (or large packet size)", isCorrect: true, explanation: "Correct. The -l flag specifies buffer size to verify large packet transmission." },
-          { text: "format C: /q", isCorrect: false, explanation: "Destructive system wipe command; never run." },
-          { text: "ipconfig /release", isCorrect: false, explanation: "Releases DHCP lease, dropping connection." },
-          { text: "traceroute google.com", isCorrect: false, explanation: "Tests external internet, not internal printer link." }
-        ]
-      },
-      {
-        text: "What Windows power setting must be disabled on the RIP workstation to prevent intermittent dongle and network drops?",
-        domain: "hardware_safety",
-        explanation: "USB Selective Suspend and Network Adapter power-saving ('Allow computer to turn off this device') must be disabled.",
-        options: [
-          { text: "Screen brightness setting.", isCorrect: false, explanation: "Cosmetic only." },
-          { text: "USB Selective Suspend and Network Adapter 'Power Saving' sleep mode.", isCorrect: true, explanation: "Correct. Power saving turns off USB dongles and NICs during long print runs." },
-          { text: "Bluetooth audio sync.", isCorrect: false, explanation: "Irrelevant." },
-          { text: "Windows Calculator autostart.", isCorrect: false, explanation: "Irrelevant." }
-        ]
-      }
-    ]
+      question("A job remains at a progress indicator. What is the best first diagnostic question?", "hardware_safety", "At which configured stage did the job stop, and what status or error is recorded there?", "Locating the first observed failure narrows the relevant layer without guessing.", [
+        { text: "Which printer board should be replaced?", explanation: "No hardware cause has been established." },
+        { text: "Which safety setting can be disabled to speed up the queue?", explanation: "Security or safety controls should not be disabled without authorization." },
+        { text: "Which random IP address should be assigned?", explanation: "Changing addressing without evidence and authorization can disrupt a network." },
+      ]),
+      question("What does a successful ping prove?", "hardware_safety", "Limited reachability for that test; it does not prove the entire job-processing workflow is healthy.", "Application processing, queues, protocols, files, and device state can still fail.", [
+        { text: "That the RIP rendered the file correctly.", explanation: "A ping does not test file processing." },
+        { text: "That every print job can reach the device.", explanation: "One basic network test is not an end-to-end job test." },
+        { text: "That the printer has no active faults.", explanation: "Device faults are independent of a basic reachability test." },
+      ]),
+      question("Which information helps a technical escalation?", "hardware_safety", "Job identity, timestamp, observed stage, exact error text, versions, and authorized checks already performed.", "A concise timeline and evidence help the system owner investigate efficiently.", [
+        { text: "Passwords, customer artwork, and a guessed root cause.", explanation: "Secrets and unnecessary customer content should not be shared." },
+        { text: "Only a statement that the system is broken.", explanation: "That provides no discriminating evidence." },
+        { text: "A copied error from a different model.", explanation: "Errors must be tied to the actual system and version." },
+      ]),
+      question("What is appropriate before changing network settings?", "hardware_safety", "Obtain approval from the responsible system owner and use the documented configuration process.", "Network changes can affect other systems and require ownership and change control.", [
+        { text: "Disable endpoint security until printing resumes.", explanation: "Disabling security is not an authorized default diagnostic step." },
+        { text: "Change a device address based on a guess.", explanation: "An IP change can create a conflict or make the system unreachable." },
+        { text: "Connect a personal laptop to an unknown network.", explanation: "Unauthorized connection can create security risks." },
+      ]),
+      question("All users report a stalled queue, while a single job previously failed. What should you consider?", "hardware_safety", "Whether the wider shared processor, queue, host, or communication path is affected, while confirming the actual configuration.", "Scope across users and jobs is useful evidence; it still does not identify a specific cause by itself.", [
+        { text: "Every printhead has failed simultaneously.", explanation: "A shared queue symptom does not prove a printhead fault." },
+        { text: "The customer artwork is definitely corrupt.", explanation: "An issue affecting many jobs may have a different scope." },
+        { text: "The device must use a dual-NIC topology.", explanation: "No topology is universal or implied here." },
+      ]),
+    ],
   },
-
-  // DAY 7
   {
     dayNumber: 7,
-    bootcampDayNumber: 2,
-    title: "Color Science, ICC Profiles, and Delta E",
+    title: "Color Science, ICC Profiles, and Measurement",
     slug: "day-07-color-science-icc-profiles-and-delta-e",
-    summary: "Deep dive into CIELAB, Delta E formulas (ΔE76 vs ΔE00), spectrophotometer measurement geometries (45/0 vs spherical), M0/M1/M2/M3 standards, and calibration vs characterization.",
+    summary: "Understand CIELAB, CIEDE2000, profiles, substrate influence, and measurement conditions while avoiding universal color pass/fail claims.",
     estimatedMinutes: 90,
     competencyDomain: "color_oris",
     objectives: [
-      "Distinguish between device-dependent (RGB, CMYK) and device-independent (CIELAB) color spaces.",
-      "Calculate and interpret Delta E (ΔE00) tolerances in commercial printing.",
-      "Explain the critical difference between calibration (linearization) and characterization (profiling).",
-      "Select appropriate ISO measurement conditions (M0, M1, M2, M3) based on optical brighteners (OBA) and polarization needs."
+      "Explain the purpose and limits of CIELAB and common color-difference calculations.",
+      "Distinguish CIE 1976 ΔE*ab from the CIEDE2000 formula.",
+      "Explain why substrate, measurement condition, instrument, and reference affect comparisons.",
+      "Separate calibration, characterization, profile selection, and contractual acceptance criteria.",
     ],
-    prerequisites: ["Day 2 digital imaging workflow"],
+    prerequisites: ["Day 2 workflow foundations"],
     sourceRef: {
-      title: "Color Measurement & Tolerancing Principles",
-      citation: "ISO 13655:2017 & CIE Colorimetry Technical Report",
-      confidenceLevel: "industry_standard",
-      notes: "Definitive colorimetry standards used by CGS ORIS."
+      title: "ISO 13655, ISO 12647-7, and CIEDE2000 implementation paper",
+      citation: `${iso13655}; ${iso126477}; Sharma, Wu & Dalal, “The CIEDE2000 Color-Difference Formula,” https://doi.org/10.1002/col.20070`,
+      confidenceLevel: "standards_and_peer_reviewed_formula_reference",
+      notes: "A ΔE value is not a universal acceptance decision. Contract, target, backing, material, illuminant/measurement condition, instrument geometry, and applicable standard must be agreed and matched.",
     },
     contentBlocks: [
-      {
-        sectionTitle: "Device-Dependent vs Device-Independent Color",
-        blockType: "teaching",
-        contentMarkdown: `### Why RGB and CMYK are Ambiguous Recipes
+      section("CIELAB and color difference", `CIELAB represents a color with lightness L* and opponent axes a* and b* under specified reference conditions. A color-difference formula compares two Lab values; it does not, on its own, define a customer's acceptance limit.
 
-A common novice misconception is that \"CMYK 0, 100, 100, 0\" is a specific color. In reality, **RGB and CMYK are merely device control values (recipes)**:
-- 100% Magenta + 100% Yellow printed on glossy coated paper looks vivid red.
-- That identical CMYK recipe printed on uncoated newsprint looks muddy orange-brown.
+CIE 1976 ΔE*ab is a Euclidean distance in Lab. CIEDE2000, often written ΔE00, applies additional weighting terms intended to improve perceptual uniformity. It is not simply another name for the 1976 formula. The color lab uses a CIEDE2000 calculation on illustrative values; those sliders are not instrument data.`),
+      section("Measurement conditions matter", `ISO 13655 specifies measurement and computation procedures for graphic-arts images. Conditions M0, M1, M2, and M3 can produce different spectral and colorimetric results, particularly for fluorescent materials or optical brighteners. The condition must be selected and recorded according to the applicable specification; it is not safe to assume one condition for every job.
 
-#### The CIELAB Color Space (Device-Independent Standard)
-Established in 1976 by the Commission Internationale de l'Éclairage (CIE), CIELAB models human visual perception:
-- **L\***: Lightness (0 = Absolute Black, 100 = Diffuse White).
-- **a\***: Red-Green axis (+a\* = Red, -a\* = Green).
-- **b\***: Yellow-Blue axis (+b\* = Yellow, -b\* = Blue).
+The instrument, geometry, calibration, backing, sample preparation, target, and measurement time can also matter. Repeatability requires following the agreed method rather than comparing numbers obtained under unmatched conditions.`, "visual_explanation"),
+      section("Calibration, characterization, and profiles", `Calibration or process control aims to bring a device to a repeatable state. Characterization measures how a device/material/process combination behaves. An ICC profile describes a color transform for specified conditions; it is not a guarantee that another substrate, ink set, or device will reproduce the same appearance.
 
-Every color perceptible to the human eye has a unique mathematical coordinate in L\*a\*b\* space, regardless of which printer or camera created it.`
-      },
-      {
-        sectionTitle: "Delta E (ΔE): Quantifying Color Difference",
-        blockType: "teaching",
-        contentMarkdown: `### How Far Off is the Color?
+Do not create or select a profile, change an ink limit, or add a white layer based on a color difference alone. Confirm installed tools, supported workflow, material, target, license, and customer specification.`, "teaching"),
+      section("Synthetic case: a target misses tolerance", `A hypothetical report states that a printed target misses an agreed value. Before deciding it is a printer fault, verify that the correct reference, formula, measurement condition, instrument status, substrate, and sample are being compared. Review the job configuration and repeat a measurement only when the documented method permits it.
 
-Delta E ($\Delta E$) measures the distance between two points in L\*a\*b\* color space (e.g., between the customer's brand standard and the printed output).
+If the current agreement is missing or unclear, ask the customer or quality owner to define the target and acceptance rule. Do not invent a threshold such as “below two always passes.”`, "field_example"),
+      section("Practice: write a measurement record", `Record: target identifier and revision; sample and substrate; instrument and measurement condition; relevant profile/process; result and formula; agreed acceptance limit; and any deviation from the method. Add “unknown” rather than inferring a setting.
 
-#### Evolution of Formulas:
-1. **$\Delta E_{76}$ (CIE 1976)**: Simple Euclidean distance: $\sqrt{(\Delta L)^2 + (\Delta a)^2 + (\Delta b)^2}$. Fails because the human eye is much more sensitive to shifts in neutral grays than in saturated yellows.
-2. **$\Delta E_{00}$ (CIEDE2000)**: Modern industry standard. Incorporates complex weighting functions for lightness ($S_L$), chroma ($S_C$), hue ($S_H$), and a neutral rotation factor ($R_T$).
-
-#### Commercial Interpretation of $\Delta E_{00}$:
-- **$\Delta E < 1.0$**: Imperceptible to normal human vision under standard D50 lighting.
-- **$1.0 \le \Delta E \le 2.0$**: Commercial tolerance for brand colors and contract proofing. Excellent match.
-- **$2.0 < \Delta E \le 3.5$**: Noticeable under side-by-side comparison; acceptable for billboard/signage, unacceptable for luxury packaging.
-- **$\Delta E > 5.0$**: Severe, unacceptable mismatch.`
-      },
-      {
-        sectionTitle: "Calibration vs Characterization: The Universal Confusion",
-        blockType: "teaching",
-        contentMarkdown: `### The Two-Step Color Management Foundation
-
-Technicians must memorize the difference between these two steps:
-
-#### Step 1: Calibration (Linearization)
-- Bringing the hardware into a known, repeatable, linear state.
-- *Process*: Setting ink limits (single-channel and total ink limit TIC/TIL) so ink doesn't pool or bleed, then adjusting 0–100% tonal curves so 50% input produces 50% dot gain.
-- **Analogy**: Tuning the strings of a guitar before playing.
-
-#### Step 2: Characterization (Profiling)
-- Measuring the printer's specific color behavior in that calibrated state.
-- *Process*: Printing an IT8.7/4 or TC1617 chart (up to 1,600+ color patches), measuring them with a spectrophotometer, and generating an **ICC Profile**.
-- **Analogy**: Reading sheet music with the tuned guitar.
-
-*Critical Service Rule*: **If a printer drifts, never re-profile first!** You re-linearize (re-calibrate) to bring the machine back to its original baseline.`
-      },
-      {
-        sectionTitle: "Measurement Conditions: M0, M1, M2, and M3",
-        blockType: "teaching",
-        contentMarkdown: `### ISO 13655 Measurement Standards Explained
-
-Modern substrates often contain **Optical Brightening Agents (OBAs)**—fluorescent chemicals that absorb invisible UV light and re-emit it as visible blue light to make paper appear \"whiter than white.\"
-
-To standardize measurements, ISO 13655 defines four illumination modes:
-- **M0 (Legacy / Tungsten)**: Uncontrolled UV content (incandescent lamp). Phased out due to lack of inter-instrument repeatability.
-- **M1 (D50 Daylight)**: Exact CIE D50 illuminant with standardized UV content. **The mandatory standard for modern GRACoL and Fogra contract proofing.**
-- **M2 (UV-Cut / No UV)**: Completely filters out all UV wavelengths below 400nm. Eliminates optical brightener fluorescence. Used in corrugated/packaging where OBAs vary wildly.
-- **M3 (Polarization Filter)**: Polarized light eliminates surface glare. Essential when measuring wet ink or high-gloss METIS fine-art/decor textures.`
-      },
-      {
-        sectionTitle: "Annotated Visual & Realistic Example",
-        blockType: "field_example",
-        contentMarkdown: `### Field Case #107: The Fluorescent Substrate Mystery
-**Complaint:** A print shop reported that contract proofs made on their proofing printer matched offset press sheets under office fluorescent lights, but the brand owner rejected them because they didn't match in their retail showroom.
-
-**Investigation:**
-1. The technician inspected the spectrophotometer settings used to build the proofing profile: It was set to **M2 (UV-Cut)**.
-2. The proofing paper had heavy OBA coatings, while the production folding carton had zero OBAs.
-3. Because UV was filtered out during profiling (M2), the proofing software could not compensate for the OBA fluorescence under D50 retail lighting.
-4. Switched measurement mode to **M1 (D50)** using CGS ORIS Color Tuner, recalibrated with an i1Pro3 spectrophotometer, and applied OBA compensation.
-
-**Result:** $\Delta E_{00}$ dropped below 1.1 across all lighting conditions. The brand owner accepted the proof.`
-      }
+A ΔE value is a measured or calculated difference—not an acceptance rule.`, "interactive_practice"),
+      section("Summary", `Use the correct formula and matching measurement conditions; treat Lab and ΔE as evidence, not a universal quality verdict. The color calculator compares the actual CIEDE2000 formula with CIE 1976 ΔE*ab.`, "summary_review"),
     ],
     questions: [
-      {
-        text: "What is the critical distinction between printer 'Calibration' (Linearization) and 'Characterization' (Profiling)?",
-        domain: "color_oris",
-        explanation: "Calibration brings the device to a repeatable baseline (ink limits, linear tonal response), whereas characterization measures and maps the resulting color gamut via an ICC profile.",
-        options: [
-          { text: "Calibration sets the mechanical belt speed, while characterization cleans the printheads.", isCorrect: false, explanation: "Incorrect." },
-          { text: "Calibration establishes a repeatable baseline (ink limits, linear curves), while characterization measures that state to create an ICC profile.", isCorrect: true, explanation: "Correct. Calibration tunes the engine; characterization maps its gamut." },
-          { text: "Calibration is done by the customer; characterization can only be done in Germany.", isCorrect: false, explanation: "Incorrect." },
-          { text: "They are completely identical terms with no difference.", isCorrect: false, explanation: "Incorrect; conflating them leads to wasted time and bad color." }
-        ]
-      },
-      {
-        text: "In the CIELAB color space, what do the L*, a*, and b* axes represent?",
-        domain: "color_oris",
-        explanation: "L* represents Lightness (0-100), a* represents the Red-Green axis, and b* represents the Yellow-Blue axis.",
-        options: [
-          { text: "L* = Lightness (0-100), a* = Red/Green axis, b* = Yellow/Blue axis.", isCorrect: true, explanation: "Correct. This defines the 3D perceptual color space." },
-          { text: "L* = Laser frequency, a* = Absorption, b* = Brightness.", isCorrect: false, explanation: "Incorrect." },
-          { text: "L* = Linear speed, a* = Acceleration, b* = Braking distance.", isCorrect: false, explanation: "Mechanical terms, not colorimetric." },
-          { text: "L* = Lens focus, a* = Aperture, b* = Bokeh.", isCorrect: false, explanation: "Photography terms." }
-        ]
-      },
-      {
-        text: "Under standard commercial printing tolerances, what is generally considered an acceptable Delta E (ΔE00) for contract brand-color proofing?",
-        domain: "color_oris",
-        explanation: "ΔE00 below 1.5 to 2.0 is the recognized commercial tolerance for tight brand colors and proofing.",
-        options: [
-          { text: "ΔE00 between 10.0 and 15.0.", isCorrect: false, explanation: "Completely unacceptable mismatch." },
-          { text: "ΔE00 <= 1.5 to 2.0.", isCorrect: true, explanation: "Correct. Tight commercial proofing demands ΔE00 under 1.5-2.0." },
-          { text: "ΔE00 must equal exactly 0.0000 on every patch.", isCorrect: false, explanation: "Physically impossible due to microscopic substrate and sensor variances." },
-          { text: "ΔE00 is only used for audio engineering.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "Which ISO 13655 measurement condition incorporates standardized UV daylight (D50) to accurately measure substrates containing Optical Brightening Agents (OBAs)?",
-        domain: "color_oris",
-        explanation: "Condition M1 specifies standardized D50 illumination including controlled UV content to properly evaluate OBA fluorescence.",
-        options: [
-          { text: "M0", isCorrect: false, explanation: "M0 is legacy incandescent with undefined UV." },
-          { text: "M1", isCorrect: true, explanation: "Correct. M1 is the D50 daylight standard with controlled UV." },
-          { text: "M2", isCorrect: false, explanation: "M2 explicitly cuts out UV light." },
-          { text: "M3", isCorrect: false, explanation: "M3 uses polarization filters." }
-        ]
-      },
-      {
-        text: "When measuring wet ink or high-gloss reflective ceramic surfaces, which measurement condition utilizes polarization to eliminate specular gloss glare?",
-        domain: "color_oris",
-        explanation: "Condition M3 specifies polarization filtering to remove specular surface reflection.",
-        options: [
-          { text: "M3", isCorrect: true, explanation: "Correct. M3 uses cross-polarization to remove surface sheen and glare." },
-          { text: "M1", isCorrect: false, explanation: "M1 is standard unpolarized D50." },
-          { text: "M0", isCorrect: false, explanation: "M0 is unpolarized." },
-          { text: "M2", isCorrect: false, explanation: "M2 is UV-cut, not polarized." }
-        ]
-      }
-    ]
+      question("Which statement correctly distinguishes ΔE*ab and ΔE00?", "color_oris", "ΔE*ab uses the CIE 1976 Lab Euclidean distance; ΔE00 uses the CIEDE2000 weighting formula.", "The formulas are related but not interchangeable labels.", [
+        { text: "They are identical formulas with different names.", explanation: "CIEDE2000 includes additional weighting terms." },
+        { text: "ΔE00 is an ink-volume measurement.", explanation: "It is a color-difference formula, not an ink-volume metric." },
+        { text: "ΔE*ab automatically decides contractual acceptance.", explanation: "A formula does not define an acceptance threshold." },
+      ]),
+      question("A reported ΔE00 value is below two. Can you conclude it passes?", "color_oris", "Not without the specified target, formula, measurement method, material, and agreed acceptance limit.", "There is no single universal pass/fail threshold for every job and product.", [
+        { text: "Yes; below two always passes all print contracts.", explanation: "Tolerances are job-specific and method-dependent." },
+        { text: "Yes; every observer sees the same difference identically.", explanation: "Perception and application criteria vary." },
+        { text: "No color measurements can ever be used for acceptance.", explanation: "Measurements can support acceptance when the method and limits are agreed." },
+      ]),
+      question("Why can two instruments report different values for the same fluorescent substrate?", "color_oris", "Different measurement conditions, instrument characteristics, or procedures can affect the result.", "Optical brighteners and condition choices make method consistency important.", [
+        { text: "The CIELAB axes change whenever a printer model changes.", explanation: "CIELAB coordinates use defined reference conditions; model identity is not the reason stated." },
+        { text: "A ΔE calculation removes every instrument difference.", explanation: "The formula cannot fix mismatched measurement conditions." },
+        { text: "Substrate fluorescence has no effect on a measurement.", explanation: "Fluorescence is one reason measurement conditions matter." },
+      ]),
+      question("What does an ICC profile describe?", "color_oris", "A color transformation associated with specified device and process conditions.", "A profile depends on the conditions for which it was created and does not guarantee other setups.", [
+        { text: "A universal color recipe that works on every substrate and device.", explanation: "Profiles are condition-dependent." },
+        { text: "A mechanical adjustment procedure for printer heads.", explanation: "An ICC profile is color-management data, not mechanical service guidance." },
+        { text: "A customer's acceptance contract.", explanation: "Acceptance criteria are separately agreed." },
+      ]),
+      question("Which record best supports a repeatable color comparison?", "color_oris", "Target, material, instrument, measurement condition, formula, result, and agreed tolerance.", "These details allow another person to interpret and reproduce the comparison.", [
+        { text: "Only the number from the instrument display.", explanation: "Without context, the number may not be comparable." },
+        { text: "The color name and a monitor screenshot.", explanation: "A screen image does not specify a physical measurement method." },
+        { text: "An assumed standard chosen after seeing the result.", explanation: "The method and acceptance rule must be defined before interpretation." },
+      ]),
+    ],
   },
-
-  // DAY 8
   {
     dayNumber: 8,
-    bootcampDayNumber: 1,
-    title: "The ORIS Software Ecosystem in Depth",
+    title: "ORIS Software Portfolio: Requirements and Verification",
     slug: "day-08-oris-software-ecosystem",
-    summary: "Comprehensive mastery of COLOR TUNER, PRESS MATCHER, X GAMUT, FLEX PACK, CERTIFIED & EVALUATE, and CxF TOOLBOX/CLOUD workflows.",
+    summary: "Use the public ORIS product overview to orient to product names, then practice verifying the installed product, version, license, and task-specific behavior from current documentation.",
     estimatedMinutes: 90,
     competencyDomain: "color_oris",
     objectives: [
-      "Select the exact CGS ORIS software package matching specific commercial customer requirements.",
-      "Explain how X GAMUT replaces spot inks with 7-color Extended Gamut Printing (ECG).",
-      "Demonstrate the spectral CxF (Color Exchange Format) communication pipeline.",
-      "Troubleshoot licensing, DeviceLink profiling errors, and color verification failures."
+      "Recognize the product names listed on the public ORIS software overview.",
+      "Avoid assigning unsupported functions or integrations from a product name alone.",
+      "Translate a customer request into workflow questions and required evidence.",
+      "Use installed-version help, current documentation, and authorized support to confirm a feature.",
     ],
-    prerequisites: ["Day 7 color science and Delta E"],
+    prerequisites: ["Days 2 and 7 workflow and color foundations"],
     sourceRef: {
-      title: "CGS ORIS Software Portfolio Specification",
-      citation: "CGS Publishing Technologies International Product Guides",
-      confidenceLevel: "confirmed_spec",
-      notes: "Official product suite architecture and customer application matching."
+      title: "CGS ORIS official software overview",
+      citation: portfolioOverview,
+      confidenceLevel: "official_public_product_overview",
+      notes: "The linked overview supports portfolio names only. Detailed functions, interfaces, version behavior, licenses, and service procedures must be confirmed in current product documentation for the customer's installation.",
     },
     contentBlocks: [
-      {
-        sectionTitle: "Product 1 & 2: COLOR TUNER and PRESS MATCHER",
-        blockType: "teaching",
-        contentMarkdown: `### 1. ORIS COLOR TUNER (Contract Proofing)
-- **Target Market**: Prepress houses, commercial printers, advertising agencies, brand packaging groups.
-- **Core Function**: The world's leading contract color proofing system. Generates 100% certified contract proofs on inkjet engines (e.g., Epson SureColor SC-P series) emulating any commercial press standard (GRACol, FOGRA, SWOP, JapanColor).
-- **Key Differentiator**: Proprietary **DeviceLink profiling** technology that maintains clean color separations, preserves 100% pure black text, and simulates spot colors with spectral accuracy.
+      section("Start from the public portfolio, not folklore", `The current public overview lists ORIS COLOR TUNER, FLEX PACK, X GAMUT, PRESS MATCHER, CERTIFIED, and EVALUATE. Names help locate official material. This lesson does not assign an unverified feature matrix, file format, automation capability, certification claim, or connection to a specific printer.
 
-### 2. ORIS PRESS MATCHER (Production Normalization)
-- **Target Market**: Digital print shops running multiple presses from different manufacturers (e.g. Platinum flatbed, HP Indigo, Canon toner press, EFI wide format).
-- **Core Function**: Harmonizes disparate digital devices to a single common reference standard. If a customer sends a file, it will print with identical color and tonal response regardless of which press or substrate is selected.
-- **Key Differentiator**: Automated closed-loop iteration. Measures printed color strips and recalculates correction curves automatically without requiring a color scientist on staff.`
-      },
-      {
-        sectionTitle: "Product 3 & 4: X GAMUT and FLEX PACK",
-        blockType: "teaching",
-        contentMarkdown: `### 3. ORIS X GAMUT (Extended Color Gamut Printing)
-- **Target Market**: High-volume packaging converters, labels, and industrial flatbed production.
-- **The Problem**: Traditional offset/flexo printers change inks for every customer brand color (Pantone 185 Red, Pantone 286 Blue), wasting hours in press wash-ups and thousands of gallons of specialized ink.
-- **The Solution**: X GAMUT converts spot colors into a fixed standard 7-color ink set: **CMYK + Orange + Green + Violet (OGV)**.
-- **Capability**: Reproduces over **95% of the entire Pantone library** without changing a single ink can or cleaning a single ink line. Multiple different customer jobs with different brand colors can be ganged together on the exact same print run!
+Different software versions, licenses, and customer workflows can change what is available. Confirm what is installed and licensed before recommending a product or menu.`),
+      section("Translate a request into requirements", `A request such as “match this color,” “prepare a proof,” or “compare output” needs more detail. Ask what device and process are involved, what target and material apply, which measurements or proof standard are required, what output the customer needs, and which software tools are already in use.
 
-### 4. ORIS FLEX PACK (Specialized Packaging Prototyping)
-- **Target Market**: Food and beverage packaging, luxury cosmetics, flexible pouch converters.
-- **Core Function**: Combined with specialized printers and custom transfer films, Flex Pack creates realistic 3D mockup packaging directly on actual production substrates (shrink sleeves, metallized films, carton board) with white ink, varnish, and cold-foil simulation.`
-      },
-      {
-        sectionTitle: "Product 5 & 6: CERTIFIED & EVALUATE and CxF TOOLBOX",
-        blockType: "teaching",
-        contentMarkdown: `### 5. ORIS CERTIFIED & EVALUATE (Quality Control)
-- **Target Market**: All print production facilities requiring ISO compliance.
-- **Core Function**: An automated verification utility. The operator reads a small 54-patch color bar using an inline or handheld spectrophotometer. The software instantly calculates $\Delta E_{00}$ against ISO 12647-7 / G7 tolerances.
-- **Output**: Generates a tamper-proof digital certification certificate and prints an adhesive barcode label applied directly to the approved proof or production sample.
+Record the outcome the customer expects and the evidence that will demonstrate it. Then locate the current product-specific documentation. If the requested operation is not covered there, escalate rather than inventing a menu or promising a result.`, "visual_explanation"),
+      section("Feature verification checklist", `Before describing an ORIS feature, verify: exact product name; release/version; licensed modules; operating environment; documented inputs and outputs; supported integrations; and current help or release notes. Separate what the official source says from your interpretation.
 
-### 6. CxF TOOLBOX and CxF CLOUD (Spectral Communication)
-- **Target Market**: Brand owners (e.g., Coca-Cola, Apple) and global packaging supply chains.
-- **Core Function**: Communicating color spectrally via **ISO 17972 (Color Exchange Format)**.
-- **Why It Matters**: Standard L\*a\*b\* or RGB values change under different illuminants (metamerism). A CxF file stores the complete 380nm–730nm spectral reflectance curve of the ink at various halftones and opacities, ensuring identical reproduction anywhere in the world.`
-      },
-      {
-        sectionTitle: "Annotated Visual: Customer Needs Matching Exercise",
-        blockType: "interactive_practice",
-        contentMarkdown: `### Scenario Match Drill: Which ORIS Solution Fits?
+Do not infer that two products are bundled together, that a given profile is supplied, or that a software tool operates directly on a printer. Confirm the configured route with the system owner.`),
+      section("Synthetic customer conversation", `A hypothetical customer asks whether an ORIS product can automatically tune every printer after a measurement. A safe answer is: “Let us check the exact software version and your configured workflow. Which device, target, and measurement are you using, and what result do you want? I will verify the documented capability before recommending a change.”
 
-| Customer Operational Problem | Correct ORIS Software Solution |
-| :--- | :--- |
-| \"We spend 3 hours washing flexo press ink fountains between jobs to mix custom Pantone inks.\" | **ORIS X GAMUT** (7-color ECG eliminates spot ink wash-ups). |
-| \"We need our new Platinum UV flatbed to match our existing toner presses on corporate brand graphics.\" | **ORIS PRESS MATCHER** (Multi-device production normalization). |
-| \"Our brand clients require ISO 12647 certified contract proofs with an audited pass/fail label.\" | **ORIS COLOR TUNER + CERTIFIED** (Contract proofing + verification). |
-| \"Our global client in Paris needs to send us their brand color without metameric color shifts.\" | **ORIS CxF TOOLBOX / CLOUD** (Spectral color communication). |
-| \"We manufacture shrink sleeves for energy drink cans and need realistic 3D mockups on foil.\" | **ORIS FLEX PACK** (Packaging transfer film & mockups). |`
-      },
-      {
-        sectionTitle: "Realistic Field Case Example",
-        blockType: "field_example",
-        contentMarkdown: `### Field Case #108: The Flexo Press Wash-Up Bottleneck
-**Client:** Flexible Film Converter, Green Bay, WI.  
-**Challenge:** Plant was losing 18 hours of production time every week because short-run jobs required washing out press decks to change spot colors.
-
-**FST / Application Specialist Solution:**
-1. Installed ORIS X GAMUT on their prepress server.
-2. Standardized the 8-color flexo line on CMYK + Orange + Green + Violet + Opaque White.
-3. Profiled the press using X GAMUT spectral test charts.
-4. Converted incoming customer files: 42 different brand spot colors were mapped into the 7-color ECG space with an average $\Delta E_{00}$ of 0.84.
-
-**Result:** Press wash-up time reduced by 85%. Plant capacity increased by $380,000 annually. Exemplary customer success story.`
-      }
+This answer is useful because it acknowledges the need without fabricating a feature or integration.`, "field_example"),
+      section("Practice: build a source-backed product note", `Choose one product name from the official overview. Write two columns: “confirmed by the public overview” and “still needs current product documentation.” Include version, license, input/output, and integration questions in the second column.` , "interactive_practice"),
+      section("Summary", `Learn product names accurately, then verify product behavior at the version and installation level. Official high-level pages are portfolio orientation, not service manuals or proof that a particular customer has a given capability.`, "summary_review"),
     ],
     questions: [
-      {
-        text: "What is the primary commercial benefit of ORIS X GAMUT in packaging and industrial print shops?",
-        domain: "color_oris",
-        explanation: "ORIS X GAMUT reproduces up to 95%+ of Pantone spot colors using a fixed 7-color ink set (CMYK+OGV), eliminating press wash-ups and spot-ink mixing.",
-        options: [
-          { text: "It converts spot colors into an extended 7-color ink set (CMYK+OGV), eliminating costly ink wash-ups and allowing ganged print jobs.", isCorrect: true, explanation: "Correct. Extended gamut reproduction is the core value proposition of X Gamut." },
-          { text: "It doubles the physical speed of the printer's carriage motor.", isCorrect: false, explanation: "Incorrect." },
-          { text: "It eliminates the need for UV curing lamps.", isCorrect: false, explanation: "Incorrect." },
-          { text: "It automatically translates foreign language text in PDFs.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "Why is a CxF (Color Exchange Format) file superior to a simple CIELAB or RGB value for communicating brand spot colors?",
-        domain: "color_oris",
-        explanation: "CxF stores full spectral reflectance curves across the visible spectrum (380-730nm), preventing metamerism and accounting for halftone opacity and substrate interactions.",
-        options: [
-          { text: "Because CxF files contain 3D video animations.", isCorrect: false, explanation: "Incorrect." },
-          { text: "Because CxF communicates complete spectral reflectance data (380–730nm), eliminating metamerism and defining ink behavior across halftones.", isCorrect: true, explanation: "Correct. Spectral data ensures identical appearance across varying light sources." },
-          { text: "Because CxF files are 100 times smaller than JPEGs.", isCorrect: false, explanation: "Incorrect." },
-          { text: "Because CxF only works on German computers.", isCorrect: false, explanation: "Absurd." }
-        ]
-      },
-      {
-        text: "A commercial printer operates an HP Indigo, a Platinum UV flatbed, and a Canon toner press. They complain that the same corporate logo prints differently on all three machines. Which software resolves this?",
-        domain: "color_oris",
-        explanation: "ORIS PRESS MATCHER is purpose-built to harmonize and synchronize color output across diverse digital press models and technologies.",
-        options: [
-          { text: "ORIS PRESS MATCHER", isCorrect: true, explanation: "Correct. Press Matcher provides device-independent production normalization." },
-          { text: "Microsoft Paint", isCorrect: false, explanation: "Incorrect." },
-          { text: "ORIS FLEX PACK", isCorrect: false, explanation: "Flex Pack is for packaging mockups, not general press fleet normalization." },
-          { text: "The printer's firmware bootloader.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "In ORIS CERTIFIED & EVALUATE, what is the purpose of printing and measuring a color control strip?",
-        domain: "color_oris",
-        explanation: "Measuring the control strip provides quantitative, tamper-proof verification that the print meets established ISO or G7 Delta E tolerance thresholds.",
-        options: [
-          { text: "To clean the nozzles at the end of each page.", isCorrect: false, explanation: "Incorrect." },
-          { text: "To provide mathematical, audited verification of compliance with industry tolerance standards (ISO/G7) and print an official certification label.", isCorrect: true, explanation: "Correct. Certified & Evaluate verifies proof integrity." },
-          { text: "To check the ink level in the waste bottle.", isCorrect: false, explanation: "Incorrect." },
-          { text: "To test the strength of the paper fibers.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "Which CGS ORIS product is specifically engineered for producing realistic packaging mockups and proofs on original production substrates like shrink films and foils?",
-        domain: "color_oris",
-        explanation: "ORIS FLEX PACK is designed for flexible packaging prototyping, transfer film applications, and metallized foil mockups.",
-        options: [
-          { text: "ORIS FLEX PACK", isCorrect: true, explanation: "Correct. Flex Pack targets the packaging mockup and transfer film sector." },
-          { text: "ORIS COLOR TUNER", isCorrect: false, explanation: "Color Tuner is for standard contract proofing on paper substrates." },
-          { text: "Adobe Acrobat Reader", isCorrect: false, explanation: "Incorrect." },
-          { text: "Platinum Controller v2", isCorrect: false, explanation: "Incorrect." }
-        ]
-      }
-    ]
+      question("What does the official ORIS software overview establish for this lesson?", "color_oris", "A list of public product names and broad portfolio context.", "It does not establish every product feature or customer configuration.", [
+        { text: "A complete feature matrix for every customer installation.", explanation: "Detailed functions and versions require product-specific documentation." },
+        { text: "That all listed products are bundled into one license.", explanation: "A product list does not state a customer's license." },
+        { text: "That every product directly controls every printer.", explanation: "A portfolio overview does not prove a device integration." },
+      ]),
+      question("A customer asks whether a named software feature is available. What should you verify?", "color_oris", "Installed product, version, license, documented capability, inputs, and configured integration.", "The customer's installation—not only the product name—determines the answer.", [
+        { text: "Whether the feature name sounds familiar.", explanation: "Familiarity is not product documentation." },
+        { text: "Whether a different customer used it on another version.", explanation: "Another installation does not establish this one." },
+        { text: "Whether the vendor's entire portfolio contains the word “color.”", explanation: "Portfolio wording does not confirm a feature." },
+      ]),
+      question("What is a safe answer when a requested automation is not yet verified?", "color_oris", "Ask about the workflow and state that you will confirm capability in the current documentation before recommending a change.", "This is accurate, customer-focused, and avoids promising unsupported behavior.", [
+        { text: "Promise it works on every supported printer.", explanation: "Universal support has not been established." },
+        { text: "Invent a menu name and ask the customer to try it.", explanation: "An invented procedure risks error and loss of trust." },
+        { text: "Change the device profile before defining the target.", explanation: "A profile change needs a documented requirement and authorization." },
+      ]),
+      question("Why does the exact software version matter?", "color_oris", "Features, interfaces, supported environments, and behavior can vary by version and license.", "Current release notes and product documentation are needed for detailed claims.", [
+        { text: "It changes the meaning of all measured Lab coordinates.", explanation: "A software version does not redefine the color space." },
+        { text: "It determines the exact printer's electrical service procedure.", explanation: "That is a separate model-specific manual." },
+        { text: "It means a profile can be used on any material.", explanation: "Profiles remain condition-dependent." },
+      ]),
+      question("Which note best separates source from interpretation?", "color_oris", "“The overview lists the product; its operation on this installation remains unverified pending version and license check.”", "It states what is known and explicitly labels the remaining uncertainty.", [
+        { text: "“This product always closes the loop automatically.”", explanation: "This is an unsupported universal feature claim." },
+        { text: "“The customer has every module because the product appears online.”", explanation: "Public availability does not establish the customer's license." },
+        { text: "“The product probably works; no need to check.”", explanation: "A guess is not a source-backed product note." },
+      ]),
+    ],
   },
-
-  // DAY 9
   {
     dayNumber: 9,
-    bootcampDayNumber: 1,
-    title: "METIS Scanning and Material Surface Imaging",
+    title: "METIS Scanner Families and Surface Imaging",
     slug: "day-09-metis-scanning-and-material-surface-imaging",
-    summary: "Explore high-precision surface imaging: METIS PM3D HAWK, DRS, and EDS scanners, directional synchro-light, photometric stereo 3D relief, calibration, and distinguishing scan vs printer artifacts.",
+    summary: "Distinguish public METIS scanner families, including decor and cultural-heritage contexts, and practice model-aware capture and artifact reasoning without generalizing features across scanners.",
     estimatedMinutes: 90,
     competencyDomain: "metis_scanning",
     objectives: [
-      "Compare the architectural capabilities of METIS PM3D, DRS, and EDS scanner families.",
-      "Explain how Synchronized Directional Lighting (SynchroLight) captures 3D surface relief, bump, gloss, and normal maps.",
-      "Perform scanner calibration using white/black reference standards and geometric alignment targets.",
-      "Diagnose scan-specific artifacts (specular flare, stitching misalignment, focal drift) versus downstream printer defects."
+      "Distinguish METIS DRS, EDS, SURF 3D, and PM3D-Hawk family contexts from the official overview.",
+      "Recognize EDS GAMMA as a member of the EDS cultural-heritage family, not a decor DRS model.",
+      "Describe image capture, reference data, and raw-file comparison as general diagnostic concepts.",
+      "Use the exact scanner and current software documentation before handling a reference, calibration, or maintenance task.",
     ],
-    prerequisites: ["Day 2 digital imaging workflow"],
+    prerequisites: ["Day 2 workflow and Day 7 color-measurement concepts"],
     sourceRef: {
-      title: "METIS High-Resolution Surface Scanning Specifications",
-      citation: "METIS Systems s.r.l. (Rome, Italy) Technical Manuals & PM3D Documentation",
-      confidenceLevel: "confirmed_spec",
-      notes: "Hardware specifications, optical geometry, and photometric stereo algorithms."
+      title: "Official METIS scanner family and EDS GAMMA product pages",
+      citation: `${metisOverview}; ${metisEdsGamma}; https://www.metis-group.com/cultural-heritage`,
+      confidenceLevel: "official_public_product_pages",
+      notes: "The sources distinguish product families and describe the EDS GAMMA at a high level. Features, software, calibration, targets, formats, and procedures vary by model; no family-wide scanner specifications are assumed.",
     },
     contentBlocks: [
-      {
-        sectionTitle: "METIS Scanner Families: PM3D, DRS, and EDS",
-        blockType: "teaching",
-        contentMarkdown: `### The Premier Material Imaging Technology
+      section("Several scanner contexts, not one universal product", `The official METIS overview lists DRS models, SURF 3D, PM3D HAWK, and cultural-heritage products. The EDS GAMMA page describes it as an A1 desktop reproduction system and a member of the EDS (Easy Digital Scanner) family; the official cultural-heritage page lists EDS family members.
 
-Headquartered in Rome, Italy, **METIS Systems s.r.l.** is recognized globally as the gold standard for high-resolution surface digitizing, fine-art reproduction, and decor surface scanning (wood, ceramics, wallpaper, leather, textiles).
+That family distinction matters. Do not transfer a capability, target, sample size, file output, capture mode, or calibration step from one scanner to another without checking the exact model and software.`),
+      section("Describe the capture chain", `For any scanner, document the original or sample, capture goal, model, optics or illumination configuration when documented, software version, reference/calibration status, output file, and observed artifact. The exact variables are product-specific.
 
-#### The Three Major Product Families:
-1. **PM3D (Photometric 3D / HAWK)**
-   - *Flagship surface texture scanner*. Designed for the decor and ceramic industries.
-   - Captures not only 2D color (RGB/16-bit) but also calculates **3D surface relief, depth (height) maps, normal maps, and gloss (specularity) maps**.
-   - These maps allow industrial UV printers (such as Platinum) to print textured physical tactile relief via multi-pass clear varnish!
+A scan workflow may create different kinds of image or surface data, but not all models capture the same information. Do not assume a gloss map, relief map, normal map, synchronized lighting mode, file type, or calibration routine exists on every METIS device.`, "visual_explanation"),
+      section("Separate capture defects from downstream defects", `If a defect appears in a printed result, compare the source file and any scan before assigning the cause. If an artifact is present in the captured file, investigate capture conditions using that scanner's approved method. If the file appears clean, downstream processing, device settings, material, or measurement may still be involved; a clean file does not prove a particular printer fault.
 
-2. **DRS Series (Digital Reprographic Systems)**
-   - Large-format flatbed scanners (e.g. DRS 2000 DCS) for fine art, ancient maps, blueprints, and fragile archival materials up to 2x1 meters.
-   - Features vacuum table hold-down and motorized camera/lighting columns.
+Use the current manufacturer procedure for handling reference objects, cleaning optics, and calibration. Do not apply generic cleaners, touch optical references, or change scanner settings based on this lesson.`, "teaching"),
+      section("Synthetic case: a repeated stripe in a captured file", `A hypothetical operator reports a stripe in repeated captures. Record whether it appears in the raw file, which model and software produced it, the original setup, when the last approved calibration was performed, and whether a second approved capture changes the result.
 
-3. **EDS Series (Easy Digital Scanner)**
-   - V-shaped book scanners designed for delicate rare manuscripts and bound volumes without flattening or stressing the spine.`
-      },
-      {
-        sectionTitle: "SynchroLight Technology and Photometric Stereo",
-        blockType: "teaching",
-        contentMarkdown: `### How METIS Captures True 3D Depth Without Lasers
+The cause could involve setup, the original, software, illumination, reference data, or hardware. A recurring pattern is a clue, not a diagnosis. Escalate when the model's calibration or cleaning procedure is unavailable.`, "field_example"),
+      section("Practice: product-family evidence card", `Select a named model from an official METIS page. Write down the exact page, product family, stated application, and one item the page does not establish for the installed unit. Use current model-specific documentation for the unknown.
 
-Most 3D scanners use laser triangulation or structured light, which struggle with dark or highly reflective materials. METIS utilizes **Photometric Stereo via SynchroLight**:
-
-#### The Principle of SynchroLight:
-- The scanner features electronically controlled LED light arrays positioned at multiple angles around the optical sensor.
-- During scanning, the software rapidly pulses lights from the **Left, Right, Top, and Bottom** independently in fractions of a second:
-  - *Pass 1 (Light from Left)*: Casts micro-shadows into crevices on the right.
-  - *Pass 2 (Light from Right)*: Casts micro-shadows into crevices on the left.
-  - *Pass 3 (Light from Top/Bottom)*: Illuminates vertical striations.
-  - *Pass 4 (Diffuse / Non-Directional)*: Captures pure color without shadows.
-
-By mathematically comparing the micro-shadow vectors cast by these directional lights, METIS software calculates the exact surface normal and elevation of every single pixel!`
-      },
-      {
-        sectionTitle: "Calibration: White Reference and Geometric Alignment",
-        blockType: "teaching",
-        contentMarkdown: `### The Daily Routine for METIS FSTs
-
-Because METIS scanners capture microscopic optical data, calibration is non-negotiable:
-
-1. **White & Dark Reference Shading Calibration**
-   - A certified optical white reference calibration tile (calibrated to NIST or BAM standards) is scanned before every production session.
-   - Compensates for individual sensor pixel sensitivity differences and LED illuminator falloff across the optical field.
-   - *Field Warning*: Never touch the white reference tile with bare hands. Fingerprint oils will introduce permanent optical banding into every scan!
-
-2. **Geometric & Stitching Alignment**
-   - High-precision grid targets verify that the scanning camera's motorized traverse is perfectly orthogonal to the scan bed with zero perspective distortion.
-
-3. **Focus Distance & Depth of Field**
-   - Automated laser distance sensors establish the focal plane. For 3D structured wood grains, aperture settings are balanced to maximize depth of field (f/8 to f/11).`
-      },
-      {
-        sectionTitle: "Differentiating Scanner Artifacts from Printer Artifacts",
-        blockType: "visual_explanation",
-        contentMarkdown: `### Diagnostic Isolation: Scanner vs Printer
-
-\`\`\`
-[ Observed Defect: White Line or Band Across Output ]
-                         │
-                         ▼
-             [ Action: Inspect Raw TIF on High-Res Prepress Monitor at 400% Zoom ]
-                         │
-        ┌────────────────┴────────────────┐
-        ▼                                 ▼
-[ Line IS VISIBLE in Raw TIF ]    [ Raw TIF is 100% CLEAN ]
-        │                                 │
-  SCANNER FAULT                     PRINTER FAULT
-  ├── Dirt on Scanner Lens          ├── Missing Nozzle on Printhead
-  ├── Contaminated White Tile       ├── Linear Encoder Scratch
-  └── LED Array Synchronization     └── Step Advance Calibration
-\`\`\`
-
-**Rule**: Never attempt to adjust a printer until you have inspected the raw digital file on a calibrated monitor!`
-      },
-      {
-        sectionTitle: "Realistic Field Case Example",
-        blockType: "field_example",
-        contentMarkdown: `### Field Case #109: The \"Scratched\" Oak Wood Scan
-**Client:** Luxury Flooring Manufacturer, Dalton, GA.  
-**Complaint:** Customer complained their METIS PM3D Hawk scanner was defective because high-resolution scans of textured French oak planks showed repetitive bright streaks across the surface.
-
-**Investigation:**
-1. The technician examined the raw 16-bit TIFF image: The bright streaks ran in the exact direction of the scanner's motorized carriage.
-2. Inspected the white reference tile: Found a small smear of dried wood resin deposited when an operator had rested a sticky wood sample on the calibration bar.
-3. Because the shading calibration read this dark resin mark during calibration, the software algorithmically over-compensated that sensor channel, producing a bright streak across the entire scan length.
-4. Cleaned the reference tile with optical lens cleaner and executed a fresh shading calibration.
-
-**Result:** The streaks disappeared completely. Operator retrained on clean handling procedures.`
-      }
+This exercise rewards careful source reading, not memorization of unverified specifications.`, "interactive_practice"),
+      section("Summary", `EDS GAMMA is in the EDS family and is described by METIS as an A1 desktop reproduction system for cultural heritage. DRS, SURF 3D, and PM3D-Hawk belong to different listed product contexts. Verify exact features at model level; do not infer all scanners share one imaging architecture.`, "summary_review"),
     ],
     questions: [
-      {
-        text: "How does METIS SynchroLight technology capture 3D surface relief and depth maps without using a laser?",
-        domain: "metis_scanning",
-        explanation: "SynchroLight pulses directional LED arrays from different angles, and photometric stereo algorithms analyze the resulting micro-shadows to compute surface angles and depth.",
-        options: [
-          { text: "By using X-rays to penetrate the wood.", isCorrect: false, explanation: "Incorrect." },
-          { text: "By pulsing directional LED lighting from multiple angles and calculating surface normal vectors from the resulting micro-shadows (Photometric Stereo).", isCorrect: true, explanation: "Correct. Photometric stereo deduces 3D geometry from multi-angle directional shadows." },
-          { text: "By pressing a mechanical needle probe into the substrate.", isCorrect: false, explanation: "Incorrect." },
-          { text: "By spinning the scanning bed at 3,000 RPM.", isCorrect: false, explanation: "Absurd." }
-        ]
-      },
-      {
-        text: "Which METIS scanner family is specifically optimized for scanning delicate, bound archival manuscripts and ancient books without flattening their spines?",
-        domain: "metis_scanning",
-        explanation: "The METIS EDS (Easy Digital Scanner) family features a V-cradle bed designed to safely image bound books and delicate historical materials.",
-        options: [
-          { text: "METIS EDS Series", isCorrect: true, explanation: "Correct. EDS is built specifically for books and archival bound manuscripts." },
-          { text: "METIS PM3D HAWK", isCorrect: false, explanation: "PM3D is for industrial 3D surface texture scanning." },
-          { text: "METIS DRS 2000", isCorrect: false, explanation: "DRS is large flatbed format for maps and fine art." },
-          { text: "Platinum Flatbed", isCorrect: false, explanation: "Platinum is a printer, not a scanner." }
-        ]
-      },
-      {
-        text: "What will happen if an operator touches the optical white reference calibration tile with bare oily fingers?",
-        domain: "metis_scanning",
-        explanation: "Fingerprint oil changes the reflectance profile; the shading algorithm will over-compensate for the darker smudge, creating a continuous bright streak across all subsequent scans.",
-        options: [
-          { text: "The scanner software will refuse to boot up.", isCorrect: false, explanation: "Incorrect." },
-          { text: "The scanner will calibrate against the oily smudge, producing severe longitudinal bright or dark streaks across all subsequent scans.", isCorrect: true, explanation: "Correct. Any contamination on the reference tile corrupts pixel shading calibration." },
-          { text: "The scanner's LED lamps will immediately shut off.", isCorrect: false, explanation: "Incorrect." },
-          { text: "The files will be saved in black and white only.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "When troubleshooting a persistent white line on printed wood grain output, what is the FIRST step to isolate whether the fault is in the METIS scanner or the Platinum printer?",
-        domain: "metis_scanning",
-        explanation: "Inspect the raw digital scan file at 100%+ zoom on a calibrated monitor; if the line exists in the file, it is a scanner fault; if the file is clean, it is a printer hardware fault.",
-        options: [
-          { text: "Inspect the raw TIFF scan file on a computer monitor at high zoom to see if the artifact exists in the digital data before printing.", isCorrect: true, explanation: "Correct. Digital file inspection immediately separates capture artifacts from printer hardware defects." },
-          { text: "Replace the printheads on the Platinum printer.", isCorrect: false, explanation: "Premature and expensive." },
-          { text: "Re-install the operating system on the RIP workstation.", isCorrect: false, explanation: "Unnecessary." },
-          { text: "Turn off the facility air conditioning.", isCorrect: false, explanation: "Irrelevant." }
-        ]
-      },
-      {
-        text: "In industrial decor reproduction (e.g. ceramic tiles or luxury vinyl tile), what is the function of the 3D 'Gloss Map' generated by a METIS PM3D scanner?",
-        domain: "metis_scanning",
-        explanation: "A gloss map isolates the specular reflectivity of the surface, allowing UV printers to apply clear gloss varnish selectively to match the original material's sheen.",
-        options: [
-          { text: "It maps where clear UV varnish or gloss finishes should be selectively deposited to replicate the natural luster and sheen of the original material.", isCorrect: true, explanation: "Correct. Gloss maps guide selective varnish deposition." },
-          { text: "It measures the electrical resistance of the ink.", isCorrect: false, explanation: "Incorrect." },
-          { text: "It tells the operator what time of day to print.", isCorrect: false, explanation: "Incorrect." },
-          { text: "It prevents paper jams in the roll feeder.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      }
-    ]
+      question("How does the official METIS site describe EDS GAMMA?", "metis_scanning", "As an A1 desktop reproduction system and a member of the EDS family, in a cultural-heritage context.", "This reflects the linked official product and family pages without extending the description to other models.", [
+        { text: "As a DRS decor printer with a universal gloss-map workflow.", explanation: "EDS GAMMA is a scanner in the EDS family, not a printer or DRS model." },
+        { text: "As a Platinum industrial printer.", explanation: "Platinum is a separate product context in the course scope." },
+        { text: "As a mandatory scanner for every ORIS software installation.", explanation: "No such integration or requirement is stated." },
+      ]),
+      question("A feature appears on the SURF 3D product page. What can you infer about every METIS scanner?", "metis_scanning", "Nothing beyond the need to check the exact product documentation; family features are not automatically universal.", "A feature listed for a specific model must not be generalized to other families.", [
+        { text: "Every model produces that output in the same workflow.", explanation: "Scanner models and outputs vary." },
+        { text: "The EDS family uses the same decor capture process.", explanation: "The sources distinguish product contexts." },
+        { text: "The feature is present whenever the customer owns ORIS software.", explanation: "Software ownership does not establish scanner hardware features." },
+      ]),
+      question("A stripe is visible in the captured file. What is an appropriate next step?", "metis_scanning", "Record the model, version, setup, and file evidence, then use its approved diagnostic and calibration documentation.", "This preserves evidence while avoiding unsupported cleaning or calibration steps.", [
+        { text: "Clean the reference with any optical solvent.", explanation: "Materials and procedures are model-specific; a generic solvent can damage a reference." },
+        { text: "Assume the camera sensor has failed.", explanation: "The artifact is not a root-cause proof." },
+        { text: "Replace the connected printer printhead.", explanation: "A captured-file artifact does not establish a printer fault." },
+      ]),
+      question("What is the value of comparing a raw scan with downstream output?", "metis_scanning", "It helps determine whether an artifact is already in captured data or appears later in the workflow.", "This narrows the stage to investigate but does not alone prove the ultimate cause.", [
+        { text: "It proves that a clean scan means the printer hardware failed.", explanation: "A clean input does not uniquely identify a downstream fault." },
+        { text: "It determines the scanner's exact calibration setting.", explanation: "A file comparison does not supply model-specific settings." },
+        { text: "It confirms that every scanner uses the same file format.", explanation: "Output formats vary by product and workflow." },
+      ]),
+      question("What should be checked before using a calibration or cleaning routine?", "metis_scanning", "The exact model's current manufacturer procedure and the technician's authorization.", "Scanner references and optics require product-specific handling instructions.", [
+        { text: "A procedure from any camera or scanner.", explanation: "A procedure may not be compatible with the actual device." },
+        { text: "An old forum post for a different software version.", explanation: "Current product documentation is required." },
+        { text: "A guessed routine that changes several settings together.", explanation: "This risks equipment damage and obscures results." },
+      ]),
+    ],
   },
-
-  // DAY 10
   {
     dayNumber: 10,
-    bootcampDayNumber: 3,
-    title: "Installation, Commissioning, and Acceptance Testing",
+    bootcampDayNumber: null,
+    title: "Installation Planning and Acceptance Evidence",
     slug: "day-10-installation-commissioning-and-acceptance",
-    summary: "Execute end-to-end commissioning: pre-site inspection, 3-phase electrical verification, HVAC stability, gantry leveling, ink priming, linearization, and customer signoff.",
+    summary: "Plan an installation around site readiness, assigned responsibilities, manufacturer documentation, safety, customer requirements, and recorded acceptance evidence—without inventing utilities or tolerances.",
     estimatedMinutes: 90,
     competencyDomain: "customer_docs",
     objectives: [
-      "Conduct a rigorous Pre-Installation Environmental & Facility Audit.",
-      "Verify 3-phase electrical supply, transformer tap selection, and isolated earth grounding.",
-      "Execute mechanical gantry leveling using precision machinist levels and dial indicators.",
-      "Complete the formal Customer Acceptance Signoff checklist and operator training protocol."
+      "Separate site-readiness planning from equipment-specific installation instructions.",
+      "Identify the documents and responsible people needed before arrival.",
+      "Define acceptance criteria with the customer before conducting a test.",
+      "Create a factual handoff of completed checks, deviations, training, and follow-up.",
     ],
-    prerequisites: ["Days 3-7 core curriculum"],
+    prerequisites: ["Days 3-7 safety, device, and workflow concepts"],
     sourceRef: {
-      title: "Field Installation & Site Preparation Manual",
-      citation: "CGS ORIS Americas Field Engineering Guidelines",
-      confidenceLevel: "confirmed_spec",
-      notes: "Pre-installation criteria, tolerances, and customer signoff procedures."
+      title: "Conceptual installation and customer-acceptance planning",
+      citation: `Use the current installation and site-preparation documentation for the exact equipment, plus the employer and site safety program. General hazardous-energy reference: ${osha1910147}`,
+      confidenceLevel: "conceptual_model_and_primary_safety_reference",
+      notes: "No utility rating, room condition, leveling tolerance, calibration setting, startup sequence, or acceptance threshold is specified in this lesson.",
     },
     contentBlocks: [
-      {
-        sectionTitle: "Phase 1: Pre-Site Facility & Environmental Audit",
-        blockType: "teaching",
-        contentMarkdown: `### Do Not Uncrate Until the Room is Verified
+      section("Plan before equipment arrives", `An installation plan should identify the exact equipment and options, delivery constraints, site access, environmental and utility requirements from the current manual, customer contacts, safety responsibilities, approved work scope, software or network owners, and the acceptance documents to be used.
 
-The #1 reason field installations fail is poor customer site preparation. The technician must audit the environment before moving heavy crated machinery:
+Do not copy utility values or room tolerances from a different product or from an educational example. Qualified site personnel confirm facility services. If readiness evidence is incomplete, record the gap and agree on next steps before attempting work.`),
+      section("Roles and safety boundaries", `Clarify which tasks belong to the service technician, customer, qualified electrician, network owner, rigging crew, or other contractor. Verify training and authorization for each task. Facility work, hazardous energy, lifting, electrical work, chemical handling, and equipment movement must follow applicable rules and the actual site procedures.
 
-1. **Environmental HVAC Controls**
-   - **Temperature**: Must be maintained at **68°F to 75°F (20°C to 24°C)** 24 hours a day. Extreme cold increases ink viscosity, causing nozzle starvation; heat causes ink misting.
-   - **Relative Humidity (RH)**: Must be **40% to 60% (Non-condensing)**. Low humidity (< 30%) builds massive electrostatic charges on plastic/acrylic boards, causing static ink scattering and destroying sensitive electronics.
+A schedule or customer request does not authorize work outside your qualification. Stop and escalate when the required safe conditions or responsible person is missing.`, "visual_explanation"),
+      section("Acceptance is agreed before the test", `Acceptance criteria should specify the target, material or configuration, approved test, measurement method, tolerances, environmental or timing conditions when relevant, responsible witness, and method for recording deviations. “Looks good” is not a reproducible criterion; nor is an invented universal value.
 
-2. **Electrical Infrastructure**
-   - Industrial 3-Phase power: Verify 208V, 230V, or 480V AC supply with dedicated circuit breakers.
-   - Measure Line-to-Line and Line-to-Neutral voltages. All three phases must be balanced within **±2%**.
-   - **Isolated Technical Ground**: Ground-to-Neutral potential must measure **< 2.0 Volts AC**. High ground voltage indicates electrical noise that will corrupt encoder and printhead data buses!
+Use manufacturer and customer documentation to select the actual checks. Record what was demonstrated and what was not. Training, open issues, and follow-up owners should be explicit.`),
+      section("Synthetic case: site not ready", `A hypothetical system is scheduled, but the site cannot produce the required current installation documents or a qualified contact for a facility service. Do not choose a voltage, connect a utility, or infer that a similar model's requirement applies.
 
-3. **Floor Loading & Rigging Access**
-   - Reinforced concrete slab: Flatbed printers weigh 3,000 to 8,000+ lbs.
-   - Doorway and elevator clearance verification.`
-      },
-      {
-        sectionTitle: "Phase 2: Mechanical Uncrating, Leveling, and Rigging",
-        blockType: "teaching",
-        contentMarkdown: `### The Art of Machine Leveling
-An industrial printer cannot print flat if its chassis is torqued or twisted:
+Record the missing prerequisite, notify the project owner, request the correct documentation and responsible contact, and re-plan. No installation result should be recorded for work that did not occur.`, "field_example"),
+      section("Practice: draft a readiness handoff", `Write a one-page outline with equipment identity; documents received; site readiness evidence; assigned roles; safety and access issues; acceptance target and method; open prerequisites; and decision owner. Use “pending” for unverified conditions.
 
-1. **Setting the Leveling Feet**
-   - The printer is lowered off transport skates onto heavy threaded leveling pads.
-   - Using two **Starrett 98 precision machinist levels** (sensitivity: 0.005 in/ft), the technician levels the chassis along the X (gantry) and Y (bed) axes simultaneously.
-   - **Tolerance**: Under **0.05 mm across the entire length of the vacuum bed**.
-
-2. **Dial Indicator Gantry Tramming**
-   - Mount a magnetic-base dial test indicator (DTI) to the carriage.
-   - Sweep the carriage across the 8-foot or 10-foot vacuum bed. The dial indicator must not deviate by more than **±0.10 mm** across the entire sweep.
-   - Adjust gantry elevation towers if tramming exceeds tolerance.`
-      },
-      {
-        sectionTitle: "Phase 3: Ink Priming, Negative Pressure & Alignment",
-        blockType: "teaching",
-        contentMarkdown: `### Bringing the System to Life
-
-1. **Safety Interlock Testing**
-   - Before energizing motion or ink pumps, test every E-Stop button and cover interlock switch individually.
-
-2. **Solvent Flush & Ink Priming**
-   - New printheads are shipped with factory storage shipping fluid (diethylene glycol).
-   - Flush the lines with approved solvent flush before introducing UV ink to avoid chemical precipitation clogs.
-   - Slowly pull ink into sub-tanks using controlled vacuum, establishing meniscus pressure.
-
-3. **Software Mechanical Alignment Patterns**
-   - *Slant Angle Alignment*: Adjusting printhead rotation so nozzle columns are exactly 90.0° perpendicular to carriage travel.
-   - *Head-to-Head Spacing*: Electronic offset calibration ensuring Cyan, Magenta, Yellow, Black, White, and Varnish fire into the exact same micron grid.
-   - *Bidirectional Alignment & Step Feed*: Final calibration on customer production media.`
-      },
-      {
-        sectionTitle: "Phase 4: Customer Training and Acceptance Signoff",
-        blockType: "teaching",
-        contentMarkdown: `### The Formal Acceptance Document
-An installation is not complete until the customer signs the **Factory Acceptance Protocol (FAT / SAT)**:
-
-- **Benchmark Test Print**: Printing a standardized torture test file containing:
-  - 1-point and 2-point micro-text.
-  - Full-bed solid ink coverage (testing vacuum hold-down and negative pressure stability).
-  - High-res photo portrait (skin tones testing grayscale smoothness).
-  - Pantones / spot color verification wedges measured with a spectrophotometer.
-- **Operator Maintenance Training**:
-  - Daily: Swabbing capping stations, wiping wiper blades with lint-free swabs, emptying waste bottles.
-  - Weekly: Lubricating carriage rails with manufacturer-specified grease, cleaning UV quartz windows.
-  - Emergency procedures: Responding to head strikes and vacuum loss.
-- Signed signoff document protects CGS ORIS from illegitimate warranty claims.`
-      },
-      {
-        sectionTitle: "Realistic Field Case Example",
-        blockType: "field_example",
-        contentMarkdown: `### Field Case #110: The \"Unlevel\" Concrete Floor
-**Client:** Commercial Display Manufacturer, Indianapolis, IN.  
-**Situation:** An FST arrived to commission a new Platinum flatbed. The customer directed the rigging crew to place the machine on an expansion joint in their concrete slab.
-
-**FST Action:**
-1. Upon placing machinist levels, the technician noticed the chassis twisted significantly when the carriage traveled to the far right side, because the concrete slab flexed under carriage weight.
-2. The technician refused to proceed with calibration, explaining that gantry alignment would drift continuously as the seasons changed across the joint.
-3. Coordinated with plant facilities to relocate the machine 10 feet onto a monolithic 8-inch reinforced concrete slab.
-4. Performed precision leveling: all four corners dialed within 0.03 mm.
-
-**Result:** Installation completed with zero mechanical drift. The customer commended the technician's firmness in preventing future service disasters.`
-      }
+This is a planning exercise, not an installation procedure.`, "interactive_practice"),
+      section("Summary", `Installation depends on exact equipment instructions, competent site roles, safe facility readiness, and acceptance criteria agreed in advance. Record evidence and gaps; do not invent numerical specifications or claim work was completed when it was not.`, "summary_review"),
     ],
     questions: [
-      {
-        text: "What are the recommended temperature and relative humidity (RH) ranges for an industrial UV inkjet printing room?",
-        domain: "customer_docs",
-        explanation: "Standard industrial print room specifications require 68°F to 75°F (20°C to 24°C) and 40% to 60% RH to maintain ink viscosity and prevent static discharge.",
-        options: [
-          { text: "68°F to 75°F (20°C to 24°C) and 40% to 60% Relative Humidity.", isCorrect: true, explanation: "Correct. This ensures stable ink surface tension and static-free media handling." },
-          { text: "50°F to 60°F and 10% Relative Humidity.", isCorrect: false, explanation: "Too cold (high viscosity) and too dry (extreme static build-up)." },
-          { text: "85°F to 95°F and 90% Relative Humidity.", isCorrect: false, explanation: "High humidity causes condensation and electrical short circuits." },
-          { text: "Temperature and humidity do not matter for industrial equipment.", isCorrect: false, explanation: "Completely false." }
-        ]
-      },
-      {
-        text: "When measuring 3-phase electrical power during a site inspection, what should the potential between Neutral and Earth Ground measure?",
-        domain: "hardware_safety",
-        explanation: "A clean, isolated technical ground should have less than 2.0 Volts AC potential to Neutral; higher voltages indicate electrical ground noise that disrupts data buses.",
-        options: [
-          { text: "Over 120 Volts AC.", isCorrect: false, explanation: "Dangerous open neutral or severe grounding fault." },
-          { text: "Less than 2.0 Volts AC.", isCorrect: true, explanation: "Correct. Ground-to-neutral potential must be near zero to avoid data corruption." },
-          { text: "480 Volts AC.", isCorrect: false, explanation: "Lethal wiring error." },
-          { text: "Zero resistance DC only.", isCorrect: false, explanation: "Incorrect terminology." }
-        ]
-      },
-      {
-        text: "Why must factory shipping fluid be thoroughly flushed from new printheads with approved solvent flush before introducing UV ink?",
-        domain: "hardware_safety",
-        explanation: "Shipping fluids (often glycols) can react chemically with UV acrylate monomers, precipitating solid polymer residue that permanently clogs nozzles.",
-        options: [
-          { text: "Because shipping fluid and UV ink can chemically react or precipitate, causing immediate, catastrophic nozzle clogging.", isCorrect: true, explanation: "Correct. Flushing ensures hydraulic compatibility." },
-          { text: "Because shipping fluid smells bad to the operators.", isCorrect: false, explanation: "Irrelevant." },
-          { text: "Because shipping fluid is magnetic and attracts metal shavings.", isCorrect: false, explanation: "Incorrect." },
-          { text: "Because shipping fluid causes the carriage motor to run backwards.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "What precision instrument is required to tram and level the printer's gantry and vacuum bed during mechanical commissioning?",
-        domain: "hardware_safety",
-        explanation: "A precision machinist level (e.g. Starrett 98) and a magnetic-base dial test indicator (DTI) are required to measure within 0.05 mm tolerances.",
-        options: [
-          { text: "A standard plastic carpenter's spirit level from a hardware store.", isCorrect: false, explanation: "Carpenter levels lack the required 0.005 in/ft sensitivity." },
-          { text: "Precision machinist levels (e.g. Starrett 98) and a magnetic-base dial test indicator (DTI).", isCorrect: true, explanation: "Correct. Sub-millimeter accuracy is mandatory." },
-          { text: "A laser pointer taped to a broom handle.", isCorrect: false, explanation: "Absurd." },
-          { text: "A smartphone leveling app.", isCorrect: false, explanation: "Inaccurate and unprofessional." }
-        ]
-      },
-      {
-        text: "Why is a formal Customer Acceptance Protocol (FAT/SAT) signoff document mandatory at the conclusion of an installation?",
-        domain: "customer_docs",
-        explanation: "It legally validates that the machine was delivered, installed, calibrated, and demonstrated to meet all published specifications, protecting against unwarranted claims.",
-        options: [
-          { text: "It allows the technician to borrow money from the customer.", isCorrect: false, explanation: "Absurd." },
-          { text: "It legally verifies that the machine meets contractual performance specifications and confirms operator training was completed.", isCorrect: true, explanation: "Correct. The signed document establishes warranty commencement and operational acceptance." },
-          { text: "It is sent to the local fire department for tax purposes.", isCorrect: false, explanation: "Incorrect." },
-          { text: "It replaces the operator's driver's license.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      }
-    ]
+      question("A utility value is missing from the installation packet. What is appropriate?", "customer_docs", "Obtain the exact current equipment requirement and have the qualified site owner confirm the facility before proceeding.", "A value from another model or a generic course is not a safe specification.", [
+        { text: "Use the highest voltage listed for a similar machine.", explanation: "A similar model is not authoritative for this installation." },
+        { text: "Estimate the value from the room's other equipment.", explanation: "Other equipment does not establish this device's requirement." },
+        { text: "Connect the device and see whether it starts.", explanation: "Trial connection is not a safe readiness check." },
+      ]),
+      question("When should acceptance criteria be agreed?", "customer_docs", "Before the verification test, using the customer and equipment-specific documents.", "Clear criteria make a later result interpretable and reduce disputes.", [
+        { text: "After seeing the test result so the limit can be adjusted.", explanation: "Changing criteria afterward undermines the acceptance decision." },
+        { text: "Only after the customer has signed an empty form.", explanation: "A signature does not define a test target or method." },
+        { text: "By copying a tolerance from an unrelated printer.", explanation: "Tolerances must match the actual requirement." },
+      ]),
+      question("Who should perform a facility task outside the technician's qualification?", "customer_docs", "The appropriately qualified and authorized site professional, coordinated under the project plan.", "Scope and competence must match the task and applicable rules.", [
+        { text: "Any available employee under time pressure.", explanation: "Availability is not qualification." },
+        { text: "The customer by guessing the connection.", explanation: "Facility work needs competent authorization." },
+        { text: "The service technician regardless of training.", explanation: "A role does not establish competence for every task." },
+      ]),
+      question("What should an installation handoff record?", "customer_docs", "Equipment identity, checks actually performed, evidence, deviations, training, and named follow-up owners.", "A factual handoff lets the customer understand status and unresolved work.", [
+        { text: "Only that the installer was on site.", explanation: "Presence does not show readiness, testing, or acceptance." },
+        { text: "A list of steps copied from a different model's manual.", explanation: "Documentation must reflect the actual unit and completed work." },
+        { text: "A pass mark for every test whether or not it ran.", explanation: "Records must be truthful and evidence-based." },
+      ]),
+      question("The site lacks a required safety contact. What is the correct response?", "customer_docs", "Pause the affected work, document the prerequisite, notify the project owner, and arrange competent support.", "Safe work depends on assigned responsibility and required controls.", [
+        { text: "Proceed because the delivery appointment is fixed.", explanation: "Schedule pressure does not override safety prerequisites." },
+        { text: "Ask an untrained operator to assume the role.", explanation: "A role cannot be assigned without appropriate competence and authorization." },
+        { text: "Skip documentation so the installation can be closed.", explanation: "An incomplete record hides a material gap." },
+      ]),
+    ],
   },
-
-  // DAY 11
   {
     dayNumber: 11,
-    bootcampDayNumber: 2,
-    title: "Advanced Fault Isolation: Multi-Cause Service Cases",
+    title: "Advanced Fault Isolation and Competing Hypotheses",
     slug: "day-11-advanced-fault-isolation",
-    summary: "Diagnose complex, compounding, and intermittent failures: thermal drift, electrical ground loops, static deflection, ink viscosity batch variation, and least-invasive testing.",
+    summary: "Practice structured diagnosis of intermittent and multi-cause symptoms using observations, competing hypotheses, controlled approved tests, uncertainty, and safe escalation.",
     estimatedMinutes: 90,
     competencyDomain: "hardware_safety",
     objectives: [
-      "Apply the principle of Least-Invasive Testing to avoid introducing new variables during troubleshooting.",
-      "Diagnose compounding failures where mechanical, electrical, and environmental factors interact.",
-      "Isolate intermittent electrical faults caused by cable drag-chain fatigue and ground loops.",
-      "Troubleshoot static-induced ink misting on synthetic substrates."
+      "Separate observed facts from interpretations and suspected causes.",
+      "Create competing hypotheses with a discriminating, approved test for each.",
+      "Change one variable at a time where safe and practical, then record the result.",
+      "Recognize when the evidence or authorization is insufficient and escalate.",
     ],
-    prerequisites: ["Days 4-7 diagnostics fundamentals"],
+    prerequisites: ["Days 3-6 safety, systems, defect, and network foundations"],
     sourceRef: {
-      title: "Advanced Electro-Mechanical Diagnostic Principles",
-      citation: "CGS ORIS Field Engineering Root Cause Analysis Manual",
-      confidenceLevel: "confirmed_spec",
-      notes: "Advanced multi-variable troubleshooting and least-invasive test doctrine."
+      title: "Evidence-based troubleshooting and causal reasoning",
+      citation: "Conceptual educational model. Manufacturer tests and site safety procedures must be selected for the exact equipment and task.",
+      confidenceLevel: "conceptual_model",
+      notes: "Examples are synthetic; no board-level repair, cable swap, electrical measurement, service-menu procedure, or part replacement is prescribed.",
     },
     contentBlocks: [
-      {
-        sectionTitle: "The Doctrine of Least-Invasive Testing",
-        blockType: "teaching",
-        contentMarkdown: `### Never Replace Two Parts at the Same Time
+      section("Observation is not explanation", `“The device stopped during a job” is an observation. “The controller board is defective” is a hypothesis. Keep the two separate. Record the time, job, material, status, conditions, recent changes, and repeatability before deciding what the event means.
 
-When confronted with a multi-symptom service case, inexperienced technicians frequently replace a printhead, a board, and a cable simultaneously. 
-- If the problem goes away, you don't know which part was bad.
-- If the problem persists or worsens, you don't know if the original fault remains or if you introduced a new fault (e.g., bent pin, static shock).
+A timeline can reveal whether several symptoms share a trigger. Temporal association alone does not establish cause; seek evidence that could distinguish alternatives.`),
+      section("Build competing hypotheses", `For each hypothesis, write: supporting evidence; evidence that would weaken it; a safe approved test; expected result under each possibility; and the person authorized to perform the test. Prioritize low-impact observation before invasive action.
 
-#### The Least-Invasive Hierarchy:
-1. **Observation & Parameter Audit**: Inspect logs, verify voltages, check environmental temps, examine test patterns under loupe. (Zero invasiveness).
-2. **Software & Configuration Checks**: Verify RIP profiles, reset controller parameters, test simple diagnostic patterns.
-3. **Non-Destructive Cleaning / Mechanical Check**: Clean encoder, swab wiper blade, check belt tension, bleed air.
-4. **Channel Swapping (Component Isolation)**: Swap an ink line or data cable between Channel A and Channel B to see if the symptom follows the cable or stays with the printhead!
-5. **Component Replacement**: Only replace hardware when data positively confirms component failure.`
-      },
-      {
-        sectionTitle: "Compounding Failure 1: The Drag-Chain Cable Fatigue",
-        blockType: "teaching",
-        contentMarkdown: `### The Nightmare of Intermittent Motion Faults
+If a proposed test requires opening a guarded area, accessing electrical parts, moving an assembly, or changing protected settings, first verify task scope, training, controls, and the actual procedure. This lesson does not authorize those actions.`, "visual_explanation"),
+      section("Intermittent symptoms", `Intermittent faults are easy to misdiagnose because the condition may disappear during a visit. Preserve error logs and timestamps, ask about workload and environment, and compare event and non-event conditions. Avoid cycling a device repeatedly or making several changes simply to “see what happens.”
 
-Industrial gantries cycle back and forth millions of times per year. Inside the plastic energy drag chain, high-flex cables and ink tubes are under continuous bending stress.
+If the problem cannot be reproduced safely, document the evidence and uncertainty, agree on monitored follow-up, and escalate with the best available data.`),
+      section("Synthetic case: fault after recent service", `A hypothetical customer reports that a symptom began after maintenance. This establishes a useful timeline, not proof that the prior technician caused it. Review the authorized work record, current configuration, symptom conditions, and observable evidence. Ask what changed without assigning blame.
 
-#### The Symptom:
-A machine prints fine on small 12x12 inch boards in the center of the bed, but whenever an 8-foot full-bed board is printed, the machine crashes with a carriage communications error near the left end-stop!
+Use approved tests to compare the suspected area with alternatives. Do not retighten, rewire, re-align, swap cables, or apply thread-locking products without explicit model-specific instructions and authorization.`, "field_example"),
+      section("Practice: falsify one hypothesis", `Choose two plausible causes for an intermittent stop. For each, name one authorized observation that could distinguish it from the other. State what a negative result would mean and what additional evidence remains necessary.
 
-#### The Root Cause:
-Inside the drag chain, an optical fiber or copper strand inside a multi-conductor data cable has suffered **internal metal fatigue micro-fractures**.
-- When the carriage is in the center, the cable bend radius holds the broken ends in physical contact.
-- When the carriage reaches the far end-stop, the cable is pulled taut, opening the micro-fracture and interrupting data packets for 1 millisecond.
-- *Diagnostic Method*: Meter continuity while manually flexing the cable harness through its entire arc of motion.`
-      },
-      {
-        sectionTitle: "Compounding Failure 2: Static Electricity vs Ink Droplets",
-        blockType: "teaching",
-        contentMarkdown: `### When Ink Deflects Into a Ghost Mist
-
-On synthetic plastics (Coroplast, styrene, acrylic, polycarbonate), static charges can exceed **20,000 to 30,000 Volts**.
-
-#### How Static Destroys Print Quality:
-1. As the printhead ejects 12-picoliter droplets (which have microscopic mass), the massive electrostatic field on the plastic repels or attracts the flying droplets mid-air.
-2. Droplets shatter into aerosol mist, creating a fuzzy halo around text and settling onto the carriage encoder strip.
-3. In severe cases, static sparks discharge directly into the metal nozzle plate, frying the sensitive piezoelectric driver ASICs on the printhead!
-
-#### The Solution:
-- Verify active ionizing static bars mounted on the carriage.
-- Measure ionizer discharge pins with an electrostatic field meter.
-- Install static ground tinsel and humidify the print shop to > 40% RH.`
-      },
-      {
-        sectionTitle: "Annotated Visual: Channel Swapping Logic",
-        blockType: "visual_explanation",
-        contentMarkdown: `### Isolating Printhead vs Head Board vs Ink Line via Swapping
-
-\`\`\`
-   [ Problem: Cyan Channel Drops Out Completely After 30 Seconds ]
-                                  │
-                                  ▼
-      [ Step 1: Swap Data Cable Between Cyan and Yellow on Head Board ]
-                                  │
-                 ┌────────────────┴────────────────┐
-                 ▼                                 ▼
-   [ Symptom MOVES to Yellow ]        [ Symptom STAYS on Cyan ]
-   Fault is UPSTREAM:                 Fault is DOWNSTREAM:
-   ├── Head Board Driver Port         ├── Cyan Printhead Damaged
-   └── Main Board / Cable             └── Cyan Ink Supply / Meniscus
-                                                   │
-                                                   ▼
-                       [ Step 2: Swap Cyan & Yellow Ink Tubes at Sub-tank ]
-                                                   │
-                                  ┌────────────────┴────────────────┐
-                                  ▼                                 ▼
-                    [ Symptom MOVES to Yellow ]       [ Symptom STAYS on Cyan ]
-                    Fault is in Ink Supply:           Cyan Printhead Internal
-                    ├── Clogged Damper / Filter       PZT or Filter Delamination.
-                    └── Sub-tank Vacuum Valve         (Replace Cyan Printhead)
-\`\`\`
-
-By swapping systematically, you isolate the exact failing component with 100% mathematical certainty.`
-      },
-      {
-        sectionTitle: "Realistic Field Case Example",
-        blockType: "field_example",
-        contentMarkdown: `### Field Case #111: The \"Random\" 4:00 PM Nozzle Dropout
-**Client:** POP Display House, St. Louis, MO.  
-**Complaint:** Every afternoon around 4:00 PM, all four UV printheads would exhibit severe nozzle dropout. Previous technicians had replaced two printheads and the ink pump, but the problem recurred daily.
-
-**Investigation:**
-1. The FST logged environmental parameters: At 3:30 PM, the summer sun hit uninsulated west-facing skylights directly above the printer.
-2. Ambient temperature in the print zone spiked from 72°F to 88°F (31°C).
-3. The elevated temperature reduced ink viscosity dramatically (from 11 cP down to 6 cP).
-4. Because the ink was now water-thin, the standard -3.2 kPa sub-tank meniscus vacuum could no longer balance surface tension, causing nozzles to de-prime during high-speed firing.
-5. Tinted the skylights and adjusted the carriage sub-tank temperature control loop.
-
-**Result:** Zero dropouts. Solved through thermal physics, not parts replacement.`
-      }
+A good diagnosis can conclude “not yet isolated.”`, "interactive_practice"),
+      section("Summary", `Use timelines, alternatives, controlled tests, and honest uncertainty. Correlation is not proof; a negative test is limited to its conditions. Escalate before actions outside authorization or when safe evidence is unavailable.`, "summary_review"),
     ],
     questions: [
-      {
-        text: "What is the primary objective of the 'Least-Invasive Testing' methodology in industrial field service?",
-        domain: "hardware_safety",
-        explanation: "Least-invasive testing systematically isolates root causes using non-destructive tests and channel swapping before replacing parts, preventing the introduction of new variables.",
-        options: [
-          { text: "To minimize repair costs and isolate root cause systematically without introducing secondary variables or unnecessary parts replacement.", isCorrect: true, explanation: "Correct. Stepwise non-destructive testing guarantees accurate diagnosis." },
-          { text: "To spend as little time on-site as possible.", isCorrect: false, explanation: "Incorrect." },
-          { text: "To avoid using any tools.", isCorrect: false, explanation: "Incorrect." },
-          { text: "To convince the customer to buy a new machine.", isCorrect: false, explanation: "Unethical." }
-        ]
-      },
-      {
-        text: "A printer prints perfectly in the center of the vacuum bed, but reliably halts with a communication error only when the carriage travels to the extreme left end-stop. What is the most probable root cause?",
-        domain: "hardware_safety",
-        explanation: "Internal fatigue fracture of copper or fiber conductors in the carriage energy drag-chain cable harness, which opens only when the cable reaches full extension.",
-        options: [
-          { text: "The RIP workstation has a virus.", isCorrect: false, explanation: "Software viruses do not correspond to physical carriage physical position." },
-          { text: "An internal conductor in the drag-chain cable harness has suffered fatigue micro-fractures, opening circuit continuity only at maximum bend extension.", isCorrect: true, explanation: "Correct. Classic drag-chain fatigue failure." },
-          { text: "The ink has frozen in the line.", isCorrect: false, explanation: "Ink freezing does not trigger carriage position communications errors." },
-          { text: "The customer's room lighting is flickering.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "How does excessive static electricity on a plastic substrate cause fuzzy, misty text and image halos in industrial inkjet printing?",
-        domain: "hardware_safety",
-        explanation: "Electrostatic charges (up to 30kV) on the substrate repel or deflect flying microscopic ink droplets mid-air, scattering them into fine aerosol mist.",
-        options: [
-          { text: "It causes the RIP computer to overheat.", isCorrect: false, explanation: "Incorrect." },
-          { text: "The high electrostatic field deflects and shatters the microscopic flying droplets mid-air before they land on the substrate.", isCorrect: true, explanation: "Correct. Static deflection disrupts aerodynamic droplet trajectory." },
-          { text: "It magnetizes the aluminum gantry rail.", isCorrect: false, explanation: "Aluminum is non-magnetic." },
-          { text: "It turns the UV ink into solid ice.", isCorrect: false, explanation: "Absurd." }
-        ]
-      },
-      {
-        text: "When performing a 'channel swap' test to isolate whether a dropout fault is in the Printhead or the Head Board Driver, what result confirms the PRINTHEAD is the defective component?",
-        domain: "hardware_safety",
-        explanation: "If you swap data cables between Channel A and Channel B and the symptom remains on the original physical printhead, the fault is inside that printhead.",
-        options: [
-          { text: "The symptom moves to the other channel.", isCorrect: false, explanation: "That would prove the fault is upstream in the board or cable." },
-          { text: "The symptom remains on the exact same physical printhead despite swapping data drive channels.", isCorrect: true, explanation: "Correct. If the fault does not follow the swapped input, the downstream hardware is defective." },
-          { text: "The machine emits three beeps.", isCorrect: false, explanation: "Irrelevant." },
-          { text: "Both printheads start smoking.", isCorrect: false, explanation: "Catastrophic error." }
-        ]
-      },
-      {
-        text: "How does an unseasonably high ambient room temperature (e.g. 90°F / 32°C) affect UV ink behavior during printing?",
-        domain: "hardware_safety",
-        explanation: "Higher temperatures lower ink viscosity, causing droplets to flow too freely, breaking meniscus balance and causing ink drooling or starvation.",
-        options: [
-          { text: "It dramatically decreases ink viscosity, destabilizing the meniscus pressure and causing drooling or nozzle starvation.", isCorrect: true, explanation: "Correct. Viscosity is inversely proportional to temperature." },
-          { text: "It causes the ink to evaporate instantly inside the bottle.", isCorrect: false, explanation: "UV inks do not dry by evaporation." },
-          { text: "It increases the weight of the printer by 500 lbs.", isCorrect: false, explanation: "Nonsensical." },
-          { text: "It reverses the polarity of the linear encoder.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      }
-    ]
+      question("What is the difference between an observation and a hypothesis?", "hardware_safety", "An observation records what happened; a hypothesis proposes an explanation that needs testing.", "Maintaining the distinction prevents premature conclusions.", [
+        { text: "They are interchangeable labels for a confirmed root cause.", explanation: "A hypothesis is not confirmed merely because it is plausible." },
+        { text: "An observation is always a measurement from a meter.", explanation: "Observations may include visible status, logs, timing, or customer report." },
+        { text: "A hypothesis is the same as an approved service procedure.", explanation: "A hypothesis explains; a procedure governs a task." },
+      ]),
+      question("A problem started after a maintenance visit. What can be concluded?", "hardware_safety", "The timing is relevant evidence, but it does not by itself prove the prior work caused the problem.", "Causal attribution requires evidence and fair consideration of alternatives.", [
+        { text: "The previous technician definitely caused it.", explanation: "Temporal order alone does not establish causation." },
+        { text: "The previous technician's work must not be reviewed.", explanation: "Authorized work records may help construct a testable timeline." },
+        { text: "The entire device should be replaced immediately.", explanation: "The cause and scope have not been established." },
+      ]),
+      question("Why write down what result would weaken a hypothesis?", "hardware_safety", "It makes the test discriminating and reduces confirmation bias.", "A useful test can disconfirm as well as support an explanation.", [
+        { text: "To guarantee a chosen part is defective.", explanation: "Testing does not guarantee a result in advance." },
+        { text: "To avoid recording negative results.", explanation: "Negative findings should be documented with their conditions." },
+        { text: "To justify changing several settings at once.", explanation: "Multiple changes make outcomes harder to interpret." },
+      ]),
+      question("An intermittent symptom cannot be reproduced during a safe visit. What is a useful outcome?", "hardware_safety", "Record the evidence and conditions, communicate uncertainty, and agree on a monitored follow-up or escalation.", "An unresolved but well-documented case is better than an unsupported repair.", [
+        { text: "Declare the device fixed because it ran once.", explanation: "One successful moment does not resolve an intermittent issue." },
+        { text: "Change settings until an error appears.", explanation: "Uncontrolled changes are unsafe and obscure causality." },
+        { text: "Invent a failure code to justify a replacement.", explanation: "Records must be factual." },
+      ]),
+      question("A proposed test goes beyond your authorization. What should you do?", "hardware_safety", "Pause and obtain the qualified authorized person and applicable procedure.", "An educational diagnosis does not expand role boundaries.", [
+        { text: "Proceed carefully because the test is short.", explanation: "Duration does not create authorization or control hazards." },
+        { text: "Ask an operator to hold a guard while you work.", explanation: "That does not make an unauthorized hazardous task safe." },
+        { text: "Skip the procedure if you have seen a similar device.", explanation: "Experience cannot substitute for the exact procedure." },
+      ]),
+    ],
   },
-
-  // DAY 12
   {
     dayNumber: 12,
-    bootcampDayNumber: 2,
-    title: "Customer Support, Communication, and Service Tickets",
+    bootcampDayNumber: null,
+    title: "Customer Support and Factual Service Documentation",
     slug: "day-12-customer-support-and-documentation",
-    summary: "Master on-site customer de-escalation, managing angry production managers, setting expectations, writing watertight technical service tickets, and root-cause handover.",
+    summary: "Use clear customer communication and an owner-scoped educational ticket to document facts, actual work, verification, uncertainty, and follow-up without implying an OEM form or compliance status.",
     estimatedMinutes: 90,
     competencyDomain: "customer_docs",
     objectives: [
-      "De-escalate emotionally charged production-down situations using professional, empathetic communication.",
-      "Complete a professional, audit-compliant Field Service Ticket documenting symptoms, safety, tests, observations, actions, and verification.",
-      "Translate complex electro-mechanical root causes into actionable operator maintenance instructions.",
-      "Manage customer follow-ups and spare-parts order documentation."
+      "Acknowledge business impact while setting truthful expectations.",
+      "Separate the customer report, observations, hypotheses, tests, actions, and conclusions.",
+      "Record only work actually performed and verification actually obtained.",
+      "Leave clear ownership for unresolved issues and protect sensitive customer information.",
     ],
-    prerequisites: ["Day 1-11 technical curriculum"],
+    prerequisites: ["Days 3, 5, and 11 safety and diagnostic reasoning"],
     sourceRef: {
-      title: "Field Service Administration & Customer Communication Manual",
-      citation: "CGS ORIS Customer Operations & Field Ticketing Standards",
-      confidenceLevel: "confirmed_spec",
-      notes: "Ticketing anatomy, customer de-escalation protocol, and documentation compliance."
+      title: "Educational service-record and customer-communication practices",
+      citation: "Independent educational material; follow the employer's and customer's actual ticketing, privacy, retention, and service-report policies.",
+      confidenceLevel: "educational_best_practice",
+      notes: "This application's ticket is an independent training form, not an OEM, audit-certified, warranty, or legal compliance document.",
     },
     contentBlocks: [
-      {
-        sectionTitle: "Customer Psychology in Production-Down Crises",
-        blockType: "teaching",
-        contentMarkdown: `### The Pressure Behind the Anger
+      section("Acknowledge the impact, then establish the facts", `Start by listening, restating the operational impact, and clarifying the desired outcome. Ask neutral questions about the symptom, scope, timing, recent changes, and what has already been tried. Avoid blame and promises before a safe plan is known.
 
-When you arrive at a client facility with a down machine, the plant manager or business owner is often losing **$500 to $2,500 per hour** in lost production, missed client delivery deadlines, and idle labor.
+Set a realistic update time, explain what information you need, and distinguish a temporary production workaround from a verified correction. If the customer asks for an unsafe or unauthorized action, explain the boundary and identify a safe escalation.`),
+      section("A useful record preserves the reasoning", `An educational service record can include customer and equipment identity, reported concern, safety assessment, configuration notes, tests performed, observations, actions actually taken, verification results, customer communication, and follow-up. Local employer forms may use different fields.
 
-#### The De-Escalation Protocol:
-1. **Never Take Frustration Personally**: The anger is directed at the machine downtime and financial stress, not at you.
-2. **Listen Actively Without Defensive Interruption**: Let the customer explain everything that happened without immediately saying \"that's operator error.\"
-3. **Acknowledge the Business Impact**: *\"I understand you have three truckloads of packaging that must ship tomorrow morning. My sole focus today is getting this machine printing to factory specification safely and reliably.\"*
-4. **Set Realistic Expectations**: Never promise \"I'll have it running in 20 minutes\" before you have completed your diagnostic isolation. Promise **a structured update within 45 minutes** after completing baseline diagnostics.`
-      },
-      {
-        sectionTitle: "The Anatomy of a Professional Service Ticket",
-        blockType: "teaching",
-        contentMarkdown: `### The 10 Mandatory Fields of a CGS ORIS Service Ticket
+Label each statement accurately. “Customer reports” is not a technician observation. A suspected cause is not a confirmed cause. An empty field is not evidence that a test passed. Record not performed or unknown when that is the truth.`, "visual_explanation"),
+      section("Customer privacy and accountable changes", `Share only the information needed for the approved service record. Do not store passwords, access tokens, unnecessary personal data, or unapproved customer artwork in a ticket. Follow the organization’s approved retention and access policies.
 
-A vague service ticket like *\"Fixed printer, replaced board, works now\"* is unacceptable. It leaves no audit trail, fails warranty reimbursement, and teaches nothing to the next technician.
+For any authorized configuration change, record the prior value if policy permits, the documented basis, who approved it, what changed, and the verification performed. Do not make an invisible or undocumented change to appease a deadline.`),
+      section("Synthetic example: a clear follow-up", `Hypothetical close-out: “The reported banding was not reproduced during today's approved test. The static pattern was recorded; it does not rule out an intermittent production condition. The customer provided two affected job samples. No hardware adjustment was made. We agreed to collect the next occurrence's job ID and timestamp and review it with authorized support.”
 
-#### The Required 10 Fields:
-1. **Equipment Identification**: Model, Serial Number, Firmware Version, Controller Software Build.
-2. **Customer-Reported Symptom**: Verbatim customer complaint and reported operational circumstances.
-3. **Safety Assessment**: LOTO verified, interlocks inspected, PPE utilized, site hazard audit.
-4. **Relevant Configuration**: Substrate type, ink lot numbers, RIP version, ICC profile in use.
-5. **Diagnostic Tests Performed**: Multimeter readings, nozzle checks, ping test logs, feed calibration marks.
-6. **Observations & Evidence**: Measured values (e.g., \"Line voltage L1-L2 measured 204V, vacuum reading -1.8 kPa, encoder loupe inspection showed ink mist\").
-7. **Root Cause Analysis (RCA)**: The precise physical or software failure mechanism.
-8. **Corrective Actions Taken**: Step-by-step repair, parts replaced with serial numbers, mechanical calibrations.
-9. **Verification Results**: Standard test target printed, measured Delta E, customer witness signature.
-10. **Customer Communication & Recommendations**: Training provided, environmental recommendations, preventive maintenance schedule.`
-      },
-      {
-        sectionTitle: "Handover Training: Preventing the Recurring Service Call",
-        blockType: "teaching",
-        contentMarkdown: `### The Best Service Call is the One That Never Repeats
+This is more useful than “fixed” because it separates evidence, action, limitation, and next owner.`, "field_example"),
+      section("Practice: draft an honest ticket", `Create an educational ticket for a hypothetical symptom. Mark the scenario as synthetic, name only tests you actually performed in the exercise, and make no physical repair claim. State which information is unknown and who owns the next follow-up.
 
-Over 40% of industrial printer service calls are triggered by improper daily operator maintenance. 
-
-Before leaving the site:
-- Walk the lead operator through the physical cleaning routine.
-- Show them the exact difference between a clean wiper blade and a worn/cracked blade.
-- Verify they have fresh lint-free swabs and certified flush fluid in stock.
-- Explain *why* regular maintenance protects their production deadlines.`
-      },
-      {
-        sectionTitle: "Annotated Visual: Professional vs Unacceptable Ticket Comparison",
-        blockType: "visual_explanation",
-        contentMarkdown: `### Service Ticket Audit Comparison
-
-| Field | Unacceptable / Amateur Entry | Professional CGS ORIS Field Standard |
-| :--- | :--- | :--- |
-| **Symptom** | \"Print quality looks terrible.\" | \"Horizontal white gap banding across all 4-color passes on 0.080 styrene; nozzle check shows 14 missing nozzles on Cyan channel 2.\" |
-| **Diagnostics** | \"Checked stuff out.\" | \"Verified sub-tank vacuum at -1.4 kPa (spec: -3.0 to -3.5 kPa). Inspected vacuum bleed solenoid; measured 24VDC trigger present but valve failed to actuate.\" |
-| **Action** | \"Replaced valve, done.\" | \"Replaced sub-tank vacuum bleed solenoid (P/N 842-1092). Adjusted regulator to -3.2 kPa. Performed soft purge. Cleaned wiper blade.\" |
-| **Verification** | \"Customer said okay.\" | \"Printed full-bed 4x8 ft ISO test target. Zero missing nozzles. Measured Delta E on 24 patches; max ΔE00 = 1.12. Plant Manager Dave K. inspected and signed FAT signoff at 16:45.\" |`
-      },
-      {
-        sectionTitle: "Realistic Field Case Example",
-        blockType: "field_example",
-        contentMarkdown: `### Field Case #112: The De-Escalated Crisis
-**Client:** Retail Signage Group, Columbus, OH.  
-**Situation:** An FST arrived at 7:30 AM. The production director was shouting because a major national retail campaign was stalled. He threatened to kick the printer off the floor and cancel all CGS ORIS contracts.
-
-**FST Handling:**
-1. The technician listened quietly, took notes, and said: *\"Tom, I completely understand your frustration. You have a massive deadline. Let me run my initial 30-minute diagnostic protocol, and at 8:00 AM sharp, I will show you exactly what is happening and our exact timeline to fix it.\"*
-2. At 8:00 AM, the technician showed him an inspection photo: The UV lamp coolant reservoir had run completely dry because an operator had ignored the low-coolant warning beep, triggering an automatic thermal safety shutdown of the lamps.
-3. Flushed the coolant loop, refilled with distilled water/glycol mix, and verified thermal sensor readings.
-4. The printer was back in full production by 9:15 AM.
-
-**Result:** The customer apologized for the morning outburst and wrote a commendation letter to Plymouth management.`
-      }
+Use the service-ticket page to save, edit, print, and review your own records; the application labels them as independent training simulations.`, "interactive_practice"),
+      section("Summary", `Accurate documentation is a service skill. Separate report from observation and inference; record actual work and results; state uncertainty; identify follow-up; and respect privacy. A saved educational ticket is not an official employer record.`, "summary_review"),
     ],
     questions: [
-      {
-        text: "Upon arriving at a customer facility with a down machine, what is the best initial approach to handling an extremely angry and stressed production manager?",
-        domain: "customer_docs",
-        explanation: "Listen actively without getting defensive, acknowledge the serious business impact, remain calm, and commit to a structured diagnostic update within a realistic timeframe.",
-        options: [
-          { text: "Argue back and explain that warranty does not cover angry attitudes.", isCorrect: false, explanation: "Catastrophic customer service failure." },
-          { text: "Listen actively without interruption, acknowledge the financial urgency, maintain calm professionalism, and set a specific time for the first diagnostic update.", isCorrect: true, explanation: "Correct. De-escalates tension and establishes professional authority." },
-          { text: "Promise that the machine will be 100% fixed within 15 minutes before opening any covers.", isCorrect: false, explanation: "Never make unverified promises." },
-          { text: "Turn around and leave the facility.", isCorrect: false, explanation: "Unprofessional abandonment." }
-        ]
-      },
-      {
-        text: "In a formal Field Service Ticket, which entry represents a proper, professional 'Action Taken' description?",
-        domain: "customer_docs",
-        explanation: "Professional documentation details specific part numbers, measured parameters before/after, calibrations performed, and clean condition.",
-        options: [
-          { text: "\"Swapped out the broken part and wiped up some ink. Looks good.\"", isCorrect: false, explanation: "Completely inadequate." },
-          { text: "\"Replaced X-axis sub-tank vacuum solenoid (P/N 842-1092). Reset vacuum regulator to -3.2 kPa. Executed soft purge and verified 100% nozzle check across all channels.\"", isCorrect: true, explanation: "Correct. Precise, technical, auditable, and repeatable." },
-          { text: "\"Told operator not to touch buttons anymore.\"", isCorrect: false, explanation: "Unhelpful and unprofessional." },
-          { text: "\"Printer fixed itself after reboot.\"", isCorrect: false, explanation: "Ignores root cause." }
-        ]
-      },
-      {
-        text: "Why is it critical to have the customer witness a standardized benchmark test print and sign the service report before departing the site?",
-        domain: "customer_docs",
-        explanation: "Customer witness and signature confirms that the machine was returned to operational specification, preventing subsequent disputes regarding machine status at technician departure.",
-        options: [
-          { text: "Because technicians receive cash tips upon signature.", isCorrect: false, explanation: "Absurd." },
-          { text: "To obtain legal, auditable verification that the machine was demonstrated operating within factory specifications at the time of departure.", isCorrect: true, explanation: "Correct. Protects both the customer and the service organization." },
-          { text: "Because the signed form is required to unlock the technician's hotel room.", isCorrect: false, explanation: "Incorrect." },
-          { text: "To transfer all OSHA liability to the technician personally.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "What percentage of recurring industrial printer service calls are typically traced back to inadequate or improper daily operator maintenance?",
-        domain: "customer_docs",
-        explanation: "Industry studies show approximately 40% or more of recurring service interventions result from improper daily maintenance (wiping, capping, swabbing).",
-        options: [
-          { text: "Approximately 40% or more.", isCorrect: true, explanation: "Correct. Proper operator training during service calls dramatically reduces repeat failures." },
-          { text: "Exactly 0%.", isCorrect: false, explanation: "Incorrect; operator maintenance is a primary factor." },
-          { text: "100% always.", isCorrect: false, explanation: "Incorrect; genuine component fatigue also occurs." },
-          { text: "Under 1%.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "When documenting an unresolved intermittent issue that requires engineering escalation, what must the technician include in the ticket?",
-        domain: "customer_docs",
-        explanation: "Detailed oscilloscope/multimeter logs, exact environmental conditions, software build numbers, test file copies, and clear steps to reproduce the fault.",
-        options: [
-          { text: "A note saying 'Engineering needs to deal with this machine.'", isCorrect: false, explanation: "Inadequate." },
-          { text: "Specific reproduction steps, recorded error codes, multimeter/voltage readings, environmental logs, and copies of the problematic print files.", isCorrect: true, explanation: "Correct. Engineering requires data-driven evidence to isolate complex intermittent faults." },
-          { text: "Personal opinions about the customer's political views.", isCorrect: false, explanation: "Inappropriate and unprofessional." },
-          { text: "A copy of the technician's resume.", isCorrect: false, explanation: "Irrelevant." }
-        ]
-      }
-    ]
+      question("How should a ticket describe a test that was not performed?", "customer_docs", "State clearly that it was not performed and do not report a result.", "A factual record must not imply a test occurred when it did not.", [
+        { text: "Mark the test as passed to complete the form.", explanation: "An unperformed test has no pass result." },
+        { text: "Copy a result from a similar customer case.", explanation: "Another case does not establish this equipment's result." },
+        { text: "Leave the field ambiguous so the reader assumes success.", explanation: "Ambiguity can mislead the customer and future technician." },
+      ]),
+      question("Which entry best separates evidence from interpretation?", "customer_docs", "“Customer reports intermittent stops; error log not available; cause not yet isolated.”", "The entry identifies who reported the event and explicitly records uncertainty.", [
+        { text: "“Controller board failed” when no test supports it.", explanation: "That presents a hypothesis as a confirmed finding." },
+        { text: "“Customer was wrong; machine is fine.”", explanation: "It is dismissive and not evidence-based." },
+        { text: "“Repaired” when no action was taken.", explanation: "It misrepresents the work performed." },
+      ]),
+      question("Which information should not be put in a service ticket?", "customer_docs", "Passwords, session tokens, or unnecessary sensitive customer data.", "Tickets should follow approved privacy and access policies and avoid secrets.", [
+        { text: "The time of the reported error.", explanation: "A relevant timestamp supports troubleshooting." },
+        { text: "The actual device identity when authorized.", explanation: "Device identity is commonly needed to understand scope." },
+        { text: "The status message observed during an approved check.", explanation: "A factual status can be relevant evidence." },
+      ]),
+      question("What makes a useful customer update under production pressure?", "customer_docs", "Acknowledge impact, explain the next evidence-based step, and give a realistic time for an update.", "Clear communication sets expectations without promising an unverified fix.", [
+        { text: "Guarantee the machine will be fixed before the next shift.", explanation: "A guarantee may be unsupported by current evidence." },
+        { text: "Promise a replacement part before diagnosis.", explanation: "The cause and remedy are not established." },
+        { text: "Avoid speaking to the customer until the case is closed.", explanation: "Silence creates uncertainty and undermines service." },
+      ]),
+      question("What is this application's service-ticket form?", "customer_docs", "An independent educational training record, not an OEM, warranty, or compliance-certified form.", "The application disclaims manufacturer endorsement and formal status.", [
+        { text: "An official CGS ORIS warranty document.", explanation: "The platform is independent and not endorsed by the manufacturer." },
+        { text: "Proof that work was performed at a real customer site.", explanation: "The form can be used for simulations and must not misrepresent work." },
+        { text: "A substitute for an employer's service-record policy.", explanation: "Use the actual employer and customer process in the field." },
+      ]),
+    ],
   },
-
-  // DAY 13
   {
     dayNumber: 13,
     bootcampDayNumber: 3,
-    title: "Interview and Company Preparation",
+    title: "Interview Preparation and Transferable Skills",
     slug: "day-13-interview-and-company-preparation",
-    summary: "Prepare for the CGS ORIS Americas Field Service interview: translating electro-mechanical experience, delivering high-impact STAR behavioral answers, and mastering technical questions.",
+    summary: "Prepare a truthful, role-specific interview story using a current job posting, documented company information, transferable technical skills, STAR structure, and clear safety boundaries.",
     estimatedMinutes: 90,
     competencyDomain: "company_interview",
     objectives: [
-      "Structure compelling behavioral interview responses using the STAR method (Situation, Task, Action, Result).",
-      "Translate transferable electro-mechanical, IT, or print industry experience into field service assets without fabricating printer repair history.",
-      "Articulate CGS ORIS Americas' value proposition and Plymouth MN operations.",
-      "Demonstrate professional safety mindset, independent travel readiness, and customer-first ethics."
+      "Research company and role facts from current primary sources.",
+      "Translate relevant experience without claiming product expertise or repairs you have not performed.",
+      "Structure a behavioral example using Situation, Task, Action, and Result.",
+      "Explain how you would pause, consult documentation, and communicate uncertainty when faced with an unfamiliar system.",
     ],
-    prerequisites: ["Days 1-12 full curriculum"],
+    prerequisites: ["Days 1 and 11 portfolio and diagnostic practice"],
     sourceRef: {
-      title: "Field Service Technical Interview Rubric & STAR Methodology",
-      citation: "CGS ORIS Americas Hiring Specifications & Behavioral Evaluation Guidelines",
-      confidenceLevel: "confirmed_spec",
-      notes: "Hiring criteria, STAR response models, and transferable skill frameworks."
+      title: "Current employer posting and public product information as interview sources",
+      citation: `${portfolioOverview}; ${metisOverview}; use the live job listing supplied by the employer for current role requirements.`,
+      confidenceLevel: "public_sources_and_candidate_context",
+      notes: "No hiring rubric, headquarters, salary, travel percentage, interview date, or current job requirement is asserted by this lesson. Tailor answers to the current posting and the candidate's actual experience.",
     },
     contentBlocks: [
-      {
-        sectionTitle: "How to Talk About Transferable Skills Honestly",
-        blockType: "teaching",
-        contentMarkdown: `### The #1 Interview Trap: Faking Printer Experience
+      section("Research before you rehearse", `Use the current role posting and primary company product pages. Record the source and date for statements about responsibilities, travel, training, location, qualifications, and product scope. If a detail is not published or provided, ask the recruiter or omit it rather than guessing.
 
-If you have never serviced a Platinum UV flatbed printer, **do not pretend you have.** Experienced hiring managers in Plymouth will see through fabricated technical claims within two questions.
+The public product pages describe portfolios; they are not a job posting. Do not quote old training examples as evidence about current company operations.`),
+      section("Translate experience honestly", `Transferable skills can include fault isolation, reading approved documentation, customer communication, safety practice, system commissioning, data analysis, or learning unfamiliar tools. Explain a real situation and what you personally did.
 
-#### What CGS ORIS Americas Actually Looks For:
-Hiring managers look for **strong technical foundations, diagnostic discipline, safety awareness, and autonomous field maturity**.
+If you have never serviced a certain printer, scanner, or software package, say so. Then explain how you would identify the exact configuration, obtain current training and procedures, work within authorization, and verify results.`, "visual_explanation"),
+      section("STAR with technical clarity", `- **Situation:** What was the context and customer or production impact?
+- **Task:** What were you responsible for, and what was outside your role?
+- **Action:** What evidence did you collect, which alternatives did you consider, and how did you stay safe?
+- **Result:** What changed, how was it verified, what did you document, and what did you learn?
 
-| Your Prior Background | How to Translate It as a CGS ORIS Field Service Strength |
-| :--- | :--- |
-| **Automotive / Diesel / Aircraft Tech** | Expertise in hydraulic/fluid circuits, reading complex electrical schematics, precision torque specifications, and disciplined root-cause isolation. |
-| **HVAC / Industrial Maintenance** | Working with 208-480V 3-phase power, chillers/refrigeration, motor drives, pneumatic regulators, and OSHA LOTO compliance. |
-| **IT / Network / Prepress Tech** | Deep understanding of Gigabit networking, raster image processors, color spaces (RGB/CMYK/L\*a\*b\*), and operating system spoolers. |
-| **Commercial Print Operator** | Deep empathy for press deadlines, recognizing print defects (banding, color drift, curing), and understanding customer production pressure. |`
-      },
-      {
-        sectionTitle: "Mastering the STAR Method for Behavioral Questions",
-        blockType: "teaching",
-        contentMarkdown: `### Situation, Task, Action, Result
+Choose a real story. Do not add a dramatic fault, meter reading, part number, dollar amount, or time saved that you cannot substantiate.`),
+      section("Practice: an unfamiliar-system question", `Prompt: “You arrive at a device you have not serviced before. The customer asks you to adjust it immediately. What would you do?”
 
-When an interviewer asks: *\"Tell me about a time when you were alone on a customer site, ran into an unexpected technical obstacle, and had to solve it under pressure,\"* use STAR:
+A strong response acknowledges the customer's impact, clarifies the symptom, checks site safety and work authorization, identifies the model and version, reviews the current manual, gathers approved evidence, and asks for help when the task exceeds your training. It avoids both bluffing and unnecessary delay.` , "interactive_practice"),
+      section("Interview checklist", `Before the interview, prepare: one truthful troubleshooting story; one safety example; one customer-communication example; a concise statement of transferable skills; two genuine questions about the role; and verified company facts with their source.
 
-1. **S - Situation (15-20 seconds)**: Set the scene concisely. Company, machine type, high-stakes deadline.
-2. **T - Task (15 seconds)**: Define the specific problem you were responsible for solving.
-3. **A - Action (60-90 seconds - THE MOST IMPORTANT PART)**: Walk through your **systematic diagnostic reasoning**:
-   - What did you observe first?
-   - How did you isolate variables rather than guessing?
-   - How did you maintain safety?
-   - How did you communicate with the customer?
-4. **R - Result (20 seconds)**: The quantifiable outcome. Machine restored, deadline met, zero return visits, positive customer feedback.`
-      },
-      {
-        sectionTitle: "The Top 5 Questions You WILL Be Asked",
-        blockType: "teaching",
-        contentMarkdown: `### Prepare These Five Core Scenarios:
-
-1. **\"Why CGS ORIS Americas?\"**  
-   - Mention the Plymouth MN demonstration/staging facility.
-   - Highlight the unique combination of high-precision METIS surface imaging, industry-standard ORIS color management, and Platinum industrial printing.
-2. **\"How do you handle extensive 50-75% travel and working autonomously?\"**  
-   - Discuss self-discipline, vehicle/tool organization, physical resilience, and comfort being the solo expert on-site.
-3. **\"Tell me about a time you made a technical mistake and how you resolved it.\"**  
-   - Pick a genuine learning experience. Show immediate ownership, safe correction, transparent documentation, and what system you put in place to ensure it never happened again.
-4. **\"A customer is screaming at you because their machine is down. What do you do?\"**  
-   - Emphasize empathy, active listening, de-escalation, and setting structured communication check-ins.
-5. **\"You are faced with a machine fault you have never seen before, and technical support is closed for the evening. What do you do?\"**  
-   - Emphasize reading the schematics, applying the Least-Invasive Testing hierarchy, isolating subsystems systematically, and avoiding dangerous guesswork.`
-      },
-      {
-        sectionTitle: "Annotated Visual: The Model STAR Response Blueprint",
-        blockType: "visual_explanation",
-        contentMarkdown: `### Architecture of a Winning Interview Answer
-
-\`\`\`
-[ SITUATION ]
-"During an installation at a packaging plant, our scheduled power commissioning failed..."
-       │
-[ TASK ]
-"My responsibility was to determine why the main servo drive was throwing an under-voltage fault..."
-       │
-[ ACTION ]
-"Rather than assuming the drive was defective, I took out my calibrated DMM. 
-I metered Line-to-Line voltages and discovered Phase 3 was dropping to 188V under load.
-I traced the circuit back to a loose lug on the customer's main disconnect switch.
-I documented the voltage drop, showed it to the plant electrician, and waited while they re-torqued it."
-       │
-[ RESULT ]
-"Voltage stabilized at 214V across all phases. Drive powered cleanly. 
-We completed commissioning 4 hours ahead of schedule with zero parts replaced."
-\`\`\`
-
-Notice the focus on **multimeter evidence** over guessing.`
-      },
-      {
-        sectionTitle: "Realistic Practice Drill",
-        blockType: "interactive_practice",
-        contentMarkdown: `### Self-Assessment Exercise: Your 60-Second Hook
-
-Record your voice answering this prompt:  
-*\"Alex, why are you the right person for this Plymouth-based field service position?\"*
-
-Check your response against these criteria:
-- [ ] Did you mention your core technical foundation (electrical/mechanical/IT)?
-- [ ] Did you mention your diagnostic methodology (evidence-based, least-invasive)?
-- [ ] Did you express clear enthusiasm for CGS ORIS / METIS / Platinum technologies?
-- [ ] Did you confirm readiness for 50-75% travel?
-- [ ] Was it delivered in under 90 seconds without rambling?`
-      }
+Use this as practice, not as an employer-issued rubric.`, "summary_review"),
     ],
     questions: [
-      {
-        text: "When an interviewer asks about a machine failure you have never encountered before, what response demonstrates the strongest professional candidate mindset?",
-        domain: "company_interview",
-        explanation: "Demonstrate structured root-cause methodology: consulting schematics, gathering observable evidence, isolating subsystems through least-invasive testing, and documenting steps.",
-        options: [
-          { text: "\"I would keep swapping random circuit boards until the machine starts working.\"", isCorrect: false, explanation: "Costly, undisciplined guesswork." },
-          { text: "\"I rely on a systematic diagnostic process: consult electrical/hydraulic schematics, gather observable evidence, apply least-invasive isolation tests, and maintain safety protocols.\"", isCorrect: true, explanation: "Correct. Shows disciplined engineering methodology." },
-          { text: "\"I would tell the customer the machine is defective and leave.\"", isCorrect: false, explanation: "Unprofessional." },
-          { text: "\"I never encounter problems I haven't seen before because I know everything.\"", isCorrect: false, explanation: "Arrogant and untruthful." }
-        ]
-      },
-      {
-        text: "In the STAR interview response method, which component should occupy the largest portion of your speaking time?",
-        domain: "company_interview",
-        explanation: "The 'Action' component should occupy 60-70% of the response, detailing your specific technical reasoning, diagnostic steps, and personal actions.",
-        options: [
-          { text: "Situation (describing the background company history).", isCorrect: false, explanation: "Keep Situation concise (15-20 seconds)." },
-          { text: "Action (explaining your specific diagnostic steps, decisions, and problem-solving methodology).", isCorrect: true, explanation: "Correct. Action showcases your skills and reasoning." },
-          { text: "Task (explaining what your manager told you to do).", isCorrect: false, explanation: "Keep Task brief." },
-          { text: "Result (talking about the party you had after work).", isCorrect: false, explanation: "Irrelevant." }
-        ]
-      },
-      {
-        text: "If you have prior experience in automotive, diesel, or aircraft maintenance rather than digital printing, how should you present this to CGS ORIS interviewers?",
-        domain: "company_interview",
-        explanation: "Frame it honestly as strong transferable foundation in complex electro-mechanical systems, fluid hydraulics, precision tolerances, and schematic reading.",
-        options: [
-          { text: "Lie and claim that diesel engines are identical to UV flatbed printheads.", isCorrect: false, explanation: "Dishonest and will fail immediate technical follow-up." },
-          { text: "Highlight transferable electro-mechanical competencies: hydraulic flow, electrical schematics, multimeter diagnostics, precision tolerances, and disciplined safety mindset.", isCorrect: true, explanation: "Correct. Highly prized transferable skills." },
-          { text: "Apologize for having irrelevant experience.", isCorrect: false, explanation: "Never apologize for solid technical background." },
-          { text: "Say that printing is easy and anyone can do it.", isCorrect: false, explanation: "Disrespectful to the specialized craft." }
-        ]
-      },
-      {
-        text: "What key facility does CGS ORIS Americas operate in Plymouth, Minnesota, and why is it important to mention in an interview?",
-        domain: "company_interview",
-        explanation: "Plymouth, MN houses the Americas HQ, technology demonstration center, pre-shipment staging and bench testing facility, and technical training depot.",
-        options: [
-          { text: "It is their main demonstration center, pre-shipment staging facility, and technical training hub for North American operations.", isCorrect: true, explanation: "Correct. Demonstrates genuine knowledge of their operations." },
-          { text: "It is a closed warehouse with no employees.", isCorrect: false, explanation: "Incorrect." },
-          { text: "It is an oil refinery.", isCorrect: false, explanation: "Absurd." },
-          { text: "It is a retail electronics store.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "When asked about managing the demanding 50% to 75% travel requirement, what answer reflects true field service readiness?",
-        domain: "company_interview",
-        explanation: "Acknowledge the physical and personal demands, discuss personal organization, proactive travel logistics, and enjoyment of autonomous problem-solving.",
-        options: [
-          { text: "\"I only travel if I am flown in first class.\"", isCorrect: false, explanation: "Unrealistic." },
-          { text: "\"I understand the travel demands and thrive in autonomous field environments; I keep tool kits prepped, manage travel logistics proactively, and enjoy solving challenges on customer sites.\"", isCorrect: true, explanation: "Correct. Shows maturity, preparedness, and professional commitment." },
-          { text: "\"I hate traveling, but I need a paycheck.\"", isCorrect: false, explanation: "Disastrous answer." },
-          { text: "\"I plan to bring my entire family with me on every service call.\"", isCorrect: false, explanation: "Unrealistic." }
-        ]
-      }
-    ]
+      question("Where should a candidate verify current responsibilities and travel requirements?", "company_interview", "The current employer job posting or direct employer communication.", "A public portfolio page or old training example does not define a current role.", [
+        { text: "An old synthetic scenario in an independent learning app.", explanation: "An educational case is not a current job description." },
+        { text: "A guess based on similar companies.", explanation: "Similar roles can have different requirements." },
+        { text: "A product-family overview.", explanation: "Product pages are not employment postings." },
+      ]),
+      question("How should a candidate discuss equipment they have never serviced?", "company_interview", "Be candid and explain a safe, structured approach to learning and using current procedures.", "Transferable skills can be presented without fabricating hands-on product experience.", [
+        { text: "Claim to have repaired it because the systems look familiar.", explanation: "That misrepresents experience and can create safety concerns." },
+        { text: "Avoid answering and change the subject.", explanation: "An honest response can explain a useful learning method." },
+        { text: "Promise to replace parts until it works.", explanation: "This is unsafe and not an evidence-based plan." },
+      ]),
+      question("Which elements are part of the STAR structure?", "company_interview", "Situation, Task, Action, and Result.", "STAR helps organize an actual behavioral example and its outcome.", [
+        { text: "Specification, Test, Adjustment, Repair.", explanation: "That is not the STAR interview structure." },
+        { text: "Safety, Timing, Assumption, Replacement.", explanation: "That is not the STAR interview structure." },
+        { text: "Source, Target, Average, Rating.", explanation: "That is not the STAR interview structure." },
+      ]),
+      question("Which technical example should not be added to an interview story?", "company_interview", "A reading, part number, or repair result that the candidate cannot substantiate.", "Credibility requires truthful and supportable detail.", [
+        { text: "A real observation and how it was recorded.", explanation: "A real, relevant observation can strengthen an answer." },
+        { text: "A clear explanation of personal responsibility.", explanation: "Ownership helps the interviewer understand the candidate's work." },
+        { text: "A lesson learned from a verified outcome.", explanation: "Reflection is appropriate when truthful." },
+      ]),
+      question("A customer asks for an immediate adjustment to an unfamiliar device. What is a strong interview response?", "company_interview", "Clarify, assess safety and authorization, identify the exact model, consult its current procedure, and escalate when needed.", "A good answer balances customer communication, safety, evidence, and role boundaries.", [
+        { text: "Make a likely adjustment based on another device.", explanation: "Settings are model-specific and an adjustment is unverified." },
+        { text: "Agree to the adjustment so the customer remains satisfied.", explanation: "Customer pressure does not establish safety or authorization." },
+        { text: "Refuse to learn any unfamiliar system.", explanation: "A technician can learn through training and approved documentation." },
+      ]),
+    ],
   },
-
-  // DAY 14
   {
     dayNumber: 14,
     bootcampDayNumber: 3,
-    title: "Full Mock Technical Interview and Readiness Assessment",
+    title: "Mock Interview and Readiness Review",
     slug: "day-14-full-mock-interview-readiness",
-    summary: "The capstone evaluation: a comprehensive 10-question technical, behavioral, and troubleshooting simulation with weighted competency scoring and gap analysis.",
+    summary: "Integrate safety, evidence-led troubleshooting, workflow knowledge, communication, verification, and honest interview delivery using this academy's transparent practice rubric—not an employer assessment.",
     estimatedMinutes: 90,
     competencyDomain: "company_interview",
     objectives: [
-      "Successfully complete a full 10-question technical and behavioral mock interview.",
-      "Demonstrate mastery across all five competency domains: Hardware/Safety, Color/ORIS, METIS Scanning, Customer/Docs, and Company Knowledge.",
-      "Evaluate performance against professional hiring rubrics.",
-      "Generate an individualized post-course readiness report and final study plan."
+      "Structure an unfamiliar fault response around safety, facts, hypotheses, approved tests, verification, and documentation.",
+      "Explain relevant color, scanning, software, or printer concepts with appropriate uncertainty.",
+      "Deliver a concise STAR story using only supportable personal experience.",
+      "Interpret academy practice feedback as coaching evidence rather than proof of field competence or hiring readiness.",
     ],
-    prerequisites: ["Days 1-13 complete curriculum"],
+    prerequisites: ["Days 1-13 or equivalent guided preparation"],
     sourceRef: {
-      title: "Field Service Technician Comprehensive Competency Evaluation",
-      citation: "CGS ORIS Americas Technical Examination Board 2026",
-      confidenceLevel: "confirmed_spec",
-      notes: "Capstone evaluation rubric and weighted domain scoring."
+      title: "Independent academy mock interview and disclosed practice rubric",
+      citation: "This academy's educational rubric and course content; not an employer examination, certification, or hiring score.",
+      confidenceLevel: "educational_assessment",
+      notes: "The interview API uses a disclosed rule-based keyword/structure heuristic. It does not evaluate technical truth, verify experience, or use an AI technical assessor. Compare responses with the lesson, primary sources, and qualified human feedback.",
     },
     contentBlocks: [
-      {
-        sectionTitle: "The Capstone Interview Structure",
-        blockType: "teaching",
-        contentMarkdown: `### The Final Gateway
+      section("A repeatable answer framework", `For an unfamiliar technical complaint, explain: (1) how you clarify impact and scope; (2) what safety and authorization checks govern the task; (3) which facts, versions, and records you would capture; (4) competing explanations; (5) one approved test that distinguishes them; (6) how you would verify an outcome; and (7) how you would document or escalate.
 
-Welcome to Day 14. You have completed the technical curriculum covering CGS ORIS business pillars, Platinum printer electro-mechanics, METIS optical surface scanning, ORIS color science, OSHA safety, and field documentation.
+State when you lack information. A good answer does not require pretending to know a product-specific value or procedure.`),
+      section("Assessment evidence versus practice coaching", `The academy's quiz results record submitted answers. The interview studio applies a simple disclosed text-and-structure rubric to selected keywords and response organization. It cannot determine whether a technical statement is true, whether a story happened, or whether the candidate is qualified for field work.
 
-This final module evaluates your total readiness across the five weighted core competencies:
-- **Hardware, Diagnostics & Safety**: 35%
-- **Color Science & ORIS Workflows**: 25%
-- **METIS Material Scanning**: 15%
-- **Customer Support & Service Documentation**: 15%
-- **Company Knowledge & Interview Delivery**: 10%
+Use feedback to choose a topic to review. For technical accuracy, consult current primary documentation and a qualified instructor. For hiring decisions, use the employer's real process; no academy score predicts an offer.`, "visual_explanation"),
+      section("Mock prompt: customer pressure and missing documentation", `Prompt: “A production-critical machine has stopped. The customer demands a quick electrical adjustment, but you do not have the exact model procedure.”
 
-Review the questions below carefully. Formulate your answers with precision, citing specific physical principles, diagnostic tools, and professional safety practices.`
-      },
-      {
-        sectionTitle: "Comprehensive Technical Review Sheet",
-        blockType: "printable_reference",
-        contentMarkdown: `### Quick-Fire Diagnostic Recall Table
+A responsible response acknowledges impact, keeps people safe, does not probe or alter equipment without proper training and authorization, identifies the model, requests the current procedure and qualified site support, and gives the customer a clear update. Explain what evidence you would collect without crossing the safety boundary.` , "field_example"),
+      section("Self-review rubric", `After recording or writing an answer, ask yourself:
 
-| Symptom / Scenario | First Physical Check | Probable Root Cause | Corrective Action |
-| :--- | :--- | :--- | :--- |
-| **Horizontal White Banding** | Print Nozzle Check | Missing or deflected nozzles | Soft purge, wipe wiper blade, verify sub-tank vacuum (-3.2 kPa). |
-| **Horizontal Dark Banding (Clean Nozzles)** | Print Step Calibration Target | Media feed under-stepping (pass overlap) | Recalibrate media advance factor for current media thickness/weight. |
-| **Uncured / Tacky UV Ink** | Radiometer Irradiance Measurement | Dirty quartz window or UV lamp degradation | Clean quartz window with IPA; verify cooling chiller loop; replace LED array if irradiance < 500 mW/cm². |
-| **Color Shift on New Substrate** | Measure unprinted media L\*a\*b\* | Substrate white point / absorption shift | Linearize device; generate substrate-specific profile in ORIS Press Matcher. |
-| **Printer Pauses Mid-Pass** | Ping test / Check NIC status | Network buffer underrun / 100Mbps auto-neg | Isolate printer on dedicated Gigabit NIC; replace patch cable with Cat6; disable USB sleep. |
-| **Static Aerosol Ink Mist** | Electrostatic Field Meter | Plastic substrate high static (> 20kV) | Clean ionizing bar pins; add static tinsel; maintain room humidity between 40-60% RH. |
-| **Bright Streaks on METIS Scan** | Inspect White Reference Tile | Fingerprint oil or debris on calibration tile | Clean tile with optical lens fluid; re-run shading/dark calibration. |
-| **Taped Safety Interlock** | Physical Safety Inspection | Customer safety bypass | STOP WORK. Remove bypass, test interlock shutdown, document on service ticket with plant manager. |`
-      },
-      {
-        sectionTitle: "Final Readiness Scoring Rubric",
-        blockType: "teaching",
-        contentMarkdown: `### How You Are Evaluated in the Capstone Assessment
+- Did I distinguish what I know from what I infer?
+- Did I put safety, authorization, and current documentation first?
+- Did I choose evidence that could distinguish competing causes?
+- Did I define a customer-agreed verification and a factual ticket?
+- Did I describe only my real experience?
 
-Each question evaluates five distinct dimensions:
-1. **Technical Reasoning**: Did you cite correct physical, electrical, or colorimetric laws?
-2. **Safety Awareness**: Did you prioritize LOTO, PPE, and non-hazardous execution?
-3. **Customer Communication**: Was your response professional, empathetic, and de-escalating?
-4. **Verification & Documentation**: Did you require objective data (multimeter, spectrophotometer, FAT signoff) before closing?
-5. **Clarity & Structure**: Was the delivery concise, structured, and free of vague filler?`
-      }
+These are learning prompts, not an employer's scoring criteria.`, "interactive_practice"),
+      section("Next steps", `Revisit the relevant day, save a private study note, retry a knowledge check after review, or practice a different interview prompt. Persistent course completion is based on a passing saved lesson knowledge check; scenarios, flashcards, and interview exercises are tracked separately.
+
+A completed course is evidence of study activity—not a professional license, safety qualification, field-service certification, or hiring decision.`, "summary_review"),
     ],
     questions: [
-      {
-        text: "During a high-speed production run, an operator opens the front cover of a Platinum flatbed printer. The carriage continues moving, and the UV lamps remain illuminated. What is your immediate assessment and required action?",
-        domain: "hardware_safety",
-        explanation: "The safety interlock has failed or been bypassed, creating an immediate amputation and blinding UV hazard. Immediately hit an E-Stop, lock out the machine, and replace/repair the interlock.",
-        options: [
-          { text: "Finish the current print job before looking at the switch.", isCorrect: false, explanation: "Catastrophic safety violation; puts operators at extreme risk." },
-          { text: "This is a critical safety failure: immediately press an Emergency Stop, lock out the machine (LOTO), and repair/replace the failed interlock switch before any further operation.", isCorrect: true, explanation: "Correct. Unshielded UV radiation and high-speed motion require immediate shutdown." },
-          { text: "Advise the operator to wear sunglasses and keep printing.", isCorrect: false, explanation: "Gross negligence." },
-          { text: "Turn off the facility water supply.", isCorrect: false, explanation: "Irrelevant." }
-        ]
-      },
-      {
-        text: "A packaging customer wants to reproduce 85 different brand spot colors on their digital press without stopping to wash ink decks or change spot inks. Which CGS ORIS software package is specifically engineered to solve this?",
-        domain: "color_oris",
-        explanation: "ORIS X GAMUT converts spot colors into an extended 7-color fixed ink set (CMYK+OGV), reproducing over 95% of Pantone colors without ink changeovers.",
-        options: [
-          { text: "ORIS X GAMUT", isCorrect: true, explanation: "Correct. X Gamut's 7-color ECG workflow is built specifically for this application." },
-          { text: "Adobe Photoshop CS2", isCorrect: false, explanation: "Incorrect." },
-          { text: "ORIS COLOR TUNER alone", isCorrect: false, explanation: "Color Tuner is for contract proofing, not 7-color production conversion." },
-          { text: "Windows Media Player", isCorrect: false, explanation: "Absurd." }
-        ]
-      },
-      {
-        text: "You are setting up a METIS PM3D Hawk scanner to capture fine 3D wood grain texture for an industrial flooring manufacturer. Which lighting mode and data outputs are utilized?",
-        domain: "metis_scanning",
-        explanation: "Directional SynchroLight illumination captures multi-angle micro-shadows, allowing photometric stereo algorithms to compute 3D relief, normal, and gloss maps.",
-        options: [
-          { text: "Standard room ceiling fluorescent tubes only.", isCorrect: false, explanation: "Incorrect." },
-          { text: "Directional SynchroLight illumination with Photometric Stereo algorithms, generating 3D surface relief, normal maps, and gloss maps.", isCorrect: true, explanation: "Correct. SynchroLight generates complete 3D surface texture data." },
-          { text: "Infrared heat lamps generating thermal heat maps.", isCorrect: false, explanation: "Incorrect." },
-          { text: "Strobe flash cameras generating 2D black and white JPEGs only.", isCorrect: false, explanation: "Incorrect." }
-        ]
-      },
-      {
-        text: "A customer reports that a newly installed flatbed printer is producing prints with severe color banding. You observe that all nozzles fire 100% cleanly on the test pattern, but prints on heavy 1-inch thick acrylic show dark horizontal lines every 2 inches. What is the root cause?",
-        domain: "hardware_safety",
-        explanation: "Dark lines with clean nozzles indicate media advance (step feed) under-advance (overlap), likely exacerbated by the high weight/friction of 1-inch thick acrylic.",
-        options: [
-          { text: "The printhead nozzles are clogged with dried solvent.", isCorrect: false, explanation: "Contradicts the fact that the nozzle check is 100% clean." },
-          { text: "Media advance step feed error: the heavy acrylic sheet is slipping or under-advancing, causing successive print swaths to overlap and deposit excess ink.", isCorrect: true, explanation: "Correct. Overlap creates periodic dark lines." },
-          { text: "The RIP workstation has a loose keyboard cable.", isCorrect: false, explanation: "Irrelevant." },
-          { text: "The UV curing lamps are printing yellow ink.", isCorrect: false, explanation: "Nonsensical." }
-        ]
-      },
-      {
-        text: "What is the professional definition of a successful field service installation?",
-        domain: "customer_docs",
-        explanation: "A successful installation means the equipment is safely installed, mechanically leveled, verified against published technical benchmarks with test prints/Delta E readings, operators are trained on maintenance, and the customer has signed the acceptance document.",
-        options: [
-          { text: "The technician leaves the customer facility before 5:00 PM regardless of machine state.", isCorrect: false, explanation: "Unprofessional." },
-          { text: "The equipment is safely leveled, calibrated, and demonstrated running benchmark test targets within factory tolerances; operators are trained on maintenance; and the customer signs the formal Acceptance Protocol.", isCorrect: true, explanation: "Correct. Complete technical, educational, and legal completion." },
-          { text: "The machine turns on once without catching fire.", isCorrect: false, explanation: "Completely inadequate." },
-          { text: "The customer agrees to pay for dinner.", isCorrect: false, explanation: "Unprofessional." }
-        ]
-      }
-    ]
-  }
+      question("What does a passing academy knowledge check establish?", "company_interview", "That the learner passed that saved course assessment under the academy's scoring rule.", "It records course evidence; it does not certify safe field competence or predict hiring.", [
+        { text: "That the learner is authorized to service industrial equipment.", explanation: "Course completion does not grant employer or site authorization." },
+        { text: "That the learner will be hired.", explanation: "A course result is not an employer decision." },
+        { text: "That every interview answer is technically accurate.", explanation: "A quiz score does not verify every technical claim." },
+      ]),
+      question("What does the interview studio's rule-based rubric evaluate?", "company_interview", "Selected keywords and response-structure markers, as disclosed in its feedback.", "The tool is a transparent practice heuristic, not a technical-truth evaluator.", [
+        { text: "The full technical truth of every claim.", explanation: "The heuristic does not verify technical truth." },
+        { text: "Whether the candidate's story actually happened.", explanation: "The application cannot independently verify experience." },
+        { text: "The employer's hiring decision.", explanation: "The employer uses its own process." },
+      ]),
+      question("A requested service action lacks an exact procedure. What belongs in a strong answer?", "company_interview", "Pause the action, identify the equipment, obtain authorized guidance, and explain the next safe step to the customer.", "Missing product-specific documentation should lead to verification or escalation, not improvisation.", [
+        { text: "Make the adjustment from memory of a different device.", explanation: "A different device may use different procedures and settings." },
+        { text: "Promise a repair to avoid disappointing the customer.", explanation: "A promise cannot replace evidence and procedure." },
+        { text: "Use a live electrical test because the machine is urgent.", explanation: "Urgency does not authorize hazardous work." },
+      ]),
+      question("Which response best demonstrates evidence-led reasoning?", "company_interview", "State observations, offer competing hypotheses, propose an approved discriminating test, and define verification.", "This sequence makes reasoning testable and keeps conclusions tied to evidence.", [
+        { text: "Name the most expensive part and request replacement.", explanation: "A part guess is not evidence or diagnosis." },
+        { text: "Say the symptom is always caused by one common fault.", explanation: "Symptoms can have multiple causes." },
+        { text: "Make several changes and report success if the symptom disappears.", explanation: "Multiple uncontrolled changes obscure cause and may create risk." },
+      ]),
+      question("What does completing the full course mean?", "company_interview", "The learner completed the academy's saved learning and assessment requirements; it is not a license or professional certification.", "The platform distinguishes study records from external qualification and employment decisions.", [
+        { text: "The learner is a certified OEM service technician.", explanation: "The independent academy does not issue OEM certification." },
+        { text: "The learner can ignore employer safety procedures.", explanation: "Employer and site rules still govern field work." },
+        { text: "The learner has passed every real-world scenario.", explanation: "Educational simulations do not prove real-world performance." },
+      ]),
+    ],
+  },
 ];

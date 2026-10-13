@@ -2,507 +2,194 @@
 
 import React, { useState } from "react";
 import {
-  Cpu,
-  Wrench,
   AlertTriangle,
-  ShieldCheck,
-  CheckCircle2,
-  Layers,
   ArrowRight,
+  CheckCircle2,
+  Cpu,
   Eye,
   HelpCircle,
-  RotateCcw,
-  Printer,
-  Sparkles,
+  ShieldCheck,
+  Wrench,
 } from "lucide-react";
 
-interface Subsystem {
+interface PracticeQuestion {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+}
+
+interface LearningArea {
   id: string;
   name: string;
-  category: "electronics" | "hydraulics" | "motion" | "curing" | "media";
-  gridArea: string;
+  category: string;
   functionalExplanation: string;
   commonFailureSymptoms: string[];
   observableEvidence: string[];
   safeDiagnosticConsiderations: string[];
   relationshipToOtherSubsystems: string;
-  practiceQuestion: {
-    question: string;
-    options: string[];
-    correctIndex: number;
-    explanation: string;
-  };
+  practiceQuestion: PracticeQuestion;
   implicatedInFaults: string[];
 }
 
-const subsystems: Subsystem[] = [
-  {
-    id: "sub_controller",
-    name: "1. Main Printer Controller (CPU & FPGA)",
-    category: "electronics",
-    gridArea: "controller",
-    functionalExplanation: "The real-time electronic brain coordinating motor motion profiles, FPGA piezoelectric firing waveforms, interlock logic loops, and temperature control.",
-    commonFailureSymptoms: ["System lockup / frozen carriage", "Communication loss to RIP", "Thermal run-away error"],
-    observableEvidence: ["Status LED codes blinking on mainboard", "Terminal serial console logs reporting watchdog timeout", "DC bus voltage drop below 24V"],
-    safeDiagnosticConsiderations: ["Always discharge DC capacitor banks before probing test points.", "Use ESD grounding strap when touching board components."],
-    relationshipToOtherSubsystems: "Feeds synchronized pulse clocks to the carriage motion board and linear encoder reader.",
-    practiceQuestion: {
-      question: "What hardware component on the main controller generates the ultra-high frequency firing clock pulses for industrial printheads?",
-      options: ["A standard mechanical relay", "Field Programmable Gate Array (FPGA)", "The 120V power transformer", "A thermal fuse"],
-      correctIndex: 1,
-      explanation: "FPGAs handle nanosecond-level parallel clocking required to fire thousands of nozzles simultaneously.",
-    },
-    implicatedInFaults: ["fault_crash", "fault_color"],
-  },
-  {
-    id: "sub_rip_interface",
-    name: "2. RIP & Print-Job Interface",
-    category: "electronics",
-    gridArea: "rip_interface",
-    functionalExplanation: "High-speed Gigabit Ethernet or fiber link receiving screened raster swaths from the prepress workstation into the controller's FIFO buffer.",
-    commonFailureSymptoms: ["Buffer underrun pauses mid-board", "Packet dropouts", "Stalled queue at 99%"],
-    observableEvidence: ["RJ45 link LED shows 100Mbps amber instead of 1000Mbps green", "Ping packet loss on large payload test"],
-    safeDiagnosticConsiderations: ["Ensure Cat6 shielded cabling is away from high-voltage UV lamp lines to prevent EMI interference."],
-    relationshipToOtherSubsystems: "Streams raster buffers directly to the main controller memory.",
-    practiceQuestion: {
-      question: "What physical print defect is caused when data transmission stutters and carriage dwells over the board?",
-      options: ["The board catches fire", "A glossy dwell band forms where UV lamp cooks stationary ink", "The printer changes ink to cyan", "Vacuum pressure drops to zero"],
-      correctIndex: 1,
-      explanation: "Carriage pausing while UV lamps remain on creates visible thermal/gloss dwell marks.",
-    },
-    implicatedInFaults: ["fault_banding"],
-  },
-  {
-    id: "sub_interlocks",
-    name: "3. Sensors, Interlocks & E-Stops",
-    category: "electronics",
-    gridArea: "interlocks",
-    functionalExplanation: "Hardwired dual-channel fail-safe safety relays monitoring cover interlocks, crash bumper bars, and emergency stop buttons.",
-    commonFailureSymptoms: ["Printer refuses to energize servo drives", "Intermittent emergency stop during vibration", "Bypassed taped interlock hazard"],
-    observableEvidence: ["Safety relay LED indicators showing open channel loop", "Multimeter continuity test across interlock contacts"],
-    safeDiagnosticConsiderations: ["NEVER bypass safety interlocks with jumpers or tape during operation under any circumstance."],
-    relationshipToOtherSubsystems: "Directly cuts high-voltage AC/DC power to servo drives and UV lamps upon trip.",
-    practiceQuestion: {
-      question: "Why does an interlock open condition cut servo drive power but keep controller logic powered?",
-      options: ["To save electricity", "To allow the controller to safely log the exact sensor trip state while neutralizing mechanical and radiation hazards", "Because the printer ran out of fuses", "It is an engineering mistake"],
-      correctIndex: 1,
-      explanation: "Maintaining logic power preserves diagnostic error codes while isolating hazardous kinetic and optical energy.",
-    },
-    implicatedInFaults: ["fault_crash"],
-  },
-  {
-    id: "sub_reservoirs",
-    name: "4. Bulk Ink Reservoirs & Level Sensors",
-    category: "hydraulics",
-    gridArea: "reservoirs",
-    functionalExplanation: "Main 1-5 liter bulk ink tanks equipped with float switches or capacitive level sensors and motorized white ink stirrers.",
-    commonFailureSymptoms: ["Ink low false alarms", "Titanium dioxide pigment settling in White tank", "Air sucked into ink feed lines"],
-    observableEvidence: ["Visible sedimentation in white bottle", "Capacitive sensor covered in dried ink crust"],
-    safeDiagnosticConsiderations: ["Wear nitrile gloves and eye goggles; UV ink acrylates cause permanent allergic contact dermatitis."],
-    relationshipToOtherSubsystems: "Supplies liquid ink to the carriage sub-tanks via dynamic drag-chain lines.",
-    practiceQuestion: {
-      question: "What happens if the White ink agitation motor fails for 8 hours?",
-      options: ["White ink becomes transparent water", "Heavy Titanium Dioxide pigments settle to the bottom, causing ink starvation and density loss", "White ink turns into yellow ink", "The printheads explode"],
-      correctIndex: 1,
-      explanation: "TiO2 is dense and rapidly precipitates without continuous mechanical agitation.",
-    },
-    implicatedInFaults: ["fault_banding", "fault_color"],
-  },
-  {
-    id: "sub_ink_lines",
-    name: "5. Ink Lines & Carriage Drag Chain",
-    category: "hydraulics",
-    gridArea: "ink_lines",
-    functionalExplanation: "PTFE fluoropolymer chemical-resistant tubing routed through the flexible drag chain to deliver ink to carriage sub-tanks without kinking.",
-    commonFailureSymptoms: ["Pinch leaks inside drag chain", "Air bubbles in lines", "Solvent tube degradation"],
-    observableEvidence: ["Ink pooling in bottom of drag chain", "Visible air pockets traveling along tube during purge"],
-    safeDiagnosticConsiderations: ["Check that high-voltage UV cables are physically separated from ink lines inside the drag chain divider."],
-    relationshipToOtherSubsystems: "Hydraulic conduit connecting bulk tanks to carriage sub-tanks.",
-    practiceQuestion: {
-      question: "Why are PTFE or fluoropolymer tubes mandatory for UV ink delivery instead of clear silicone?",
-      options: ["Silicone tubes are too expensive", "UV acrylate monomers chemically degrade silicone, causing swelling, leaks, and particulate contamination", "PTFE is magnetic", "Silicone only works in Germany"],
-      correctIndex: 1,
-      explanation: "Aggressive UV monomer chemistry degrades standard silicone and PVC plastics.",
-    },
-    implicatedInFaults: ["fault_banding"],
-  },
-  {
-    id: "sub_negative_pressure",
-    name: "6. Negative Pressure (Meniscus) System",
-    category: "hydraulics",
-    gridArea: "negative_pressure",
-    functionalExplanation: "Maintains controlled partial vacuum (-2.0 to -4.5 kPa) inside carriage sub-tanks to create a concave ink meniscus at nozzle orifices.",
-    commonFailureSymptoms: ["Ink dripping / drooling onto media (vacuum too weak)", "Air cavitation and de-priming (vacuum too strong)", "Pressure fluctuations during carriage acceleration"],
-    observableEvidence: ["Digital manometer reading deviates from -3.2 kPa spec", "Puddles of ink forming on carriage floor"],
-    safeDiagnosticConsiderations: ["Never adjust negative pressure regulator without a calibrated digital manometer connected."],
-    relationshipToOtherSubsystems: "Directly determines droplet firing stability across all piezoelectric printheads.",
-    practiceQuestion: {
-      question: "If a printer's sub-tank manometer reads -0.5 kPa (insufficient vacuum), what visual symptom will occur?",
-      options: ["The printer carriage speeds up", "Ink will drool and drip directly from the nozzle plates onto the media", "The linear encoder will skip counts", "The RIP will freeze"],
-      correctIndex: 1,
-      explanation: "Weak vacuum allows gravity to overpower surface tension, causing ink dripping.",
-    },
-    implicatedInFaults: ["fault_banding"],
-  },
-  {
-    id: "sub_printheads",
-    name: "7. Printheads & Nozzle Plates",
-    category: "hydraulics",
-    gridArea: "printheads",
-    functionalExplanation: "Industrial piezoelectric drop-on-demand printheads (Ricoh Gen5/6, Kyocera) containing thousands of microscopic 20-30 micron nozzle orifices.",
-    commonFailureSymptoms: ["Missing nozzles", "Angular deflection", "Electrical driver ASIC failure (geometric block dropout)"],
-    observableEvidence: ["Standard nozzle test pattern shows gaps or crooked lines", "Microscopic scratch visible under 20x loupe"],
-    safeDiagnosticConsiderations: ["Never touch nozzle plates with metal tools, paper towels, or dry swabs; anti-wetting coatings are easily scratched."],
-    relationshipToOtherSubsystems: "Deposits ink droplets into the print zone under closed-loop encoder timing.",
-    practiceQuestion: {
-      question: "What tool should be used to inspect suspected nozzle plate scratches or fiber contamination?",
-      options: ["A carpenter's tape measure", "A 10x to 20x optical inspection loupe with directional LED light", "A kitchen knife", "A smartphone flash at 2 feet"],
-      correctIndex: 1,
-      explanation: "Optical loupes provide the magnification required to observe microscopic 25-micron orifices.",
-    },
-    implicatedInFaults: ["fault_banding", "fault_color"],
-  },
-  {
-    id: "sub_carriage_motion",
-    name: "8. Carriage & Linear Guideway (X-Axis)",
-    category: "motion",
-    gridArea: "carriage",
-    functionalExplanation: "Rigid carriage frame riding on precision THK/HIWIN ball-bearing guideways, driven by AC brushless servomotor and steel-reinforced timing belt.",
-    commonFailureSymptoms: ["Carriage vibration / jitter", "Bearing rumble", "Belt slippage or tooth wear"],
-    observableEvidence: ["Vertical banding at regular harmonic pitch", "Fretting corrosion dust under linear rail"],
-    safeDiagnosticConsiderations: ["LOTO mandatory before checking belt tension or servicing guideway bearings."],
-    relationshipToOtherSubsystems: "Transports printheads, sub-tanks, and UV lamps across the vacuum bed.",
-    practiceQuestion: {
-      question: "What maintenance action is required to prevent carriage bearing block seizure?",
-      options: ["Pouring motor oil on the carriage cover", "Applying manufacturer-specified lithium-complex grease via grease nipples every 200 operating hours", "Washing rails with water", "Spraying rails with spray paint"],
-      correctIndex: 1,
-      explanation: "Precision linear bearings require regular grease lubrication to prevent ball-bearing spalling.",
-    },
-    implicatedInFaults: ["fault_banding", "fault_crash"],
-  },
-  {
-    id: "sub_encoders",
-    name: "9. Linear Encoder & Positioning",
-    category: "motion",
-    gridArea: "encoders",
-    functionalExplanation: "Optical or magnetic linear scale etched with 150-360 LPI paired with an optical reader head on the carriage providing sub-micron position feedback.",
-    commonFailureSymptoms: ["Carriage runaway / crash", "Vertical step jitter", "Registration drift across wide boards"],
-    observableEvidence: ["Ink mist smudge on glass encoder strip", "Servo drive reporting 'Tracking Error > Limit'"],
-    safeDiagnosticConsiderations: ["Clean only with optical lint-free swabs and anhydrous isopropyl alcohol; avoid aggressive acetone."],
-    relationshipToOtherSubsystems: "Directly triggers the FPGA nozzle firing pulses for every column of pixels.",
-    practiceQuestion: {
-      question: "Why does an ink smudge on an optical encoder strip cause a carriage crash?",
-      options: ["Because ink is slippery", "The reader head loses optical pulse counts, causing the servo controller to miscalculate position and drive into end-stops", "The ink dissolves the belt", "The motor runs out of electricity"],
-      correctIndex: 1,
-      explanation: "Losing encoder pulses breaks closed-loop feedback, causing servo position runaway.",
-    },
-    implicatedInFaults: ["fault_banding", "fault_crash"],
-  },
-  {
-    id: "sub_vacuum_bed",
-    name: "10. Vacuum Bed & Substrate Handling",
-    category: "media",
-    gridArea: "vacuum_bed",
-    functionalExplanation: "Milled aluminum honeycomb table with selectable vacuum zones and high-flow regenerative blowers to flatten rigid substrates.",
-    commonFailureSymptoms: ["Substrate edge curl", "Head strike scraping", "Loss of vacuum suction"],
-    observableEvidence: ["Open unmasked holes whistling air", "Cardboard bowing upward 4mm at corners"],
-    safeDiagnosticConsiderations: ["Always mask unused vacuum bed zones with scrap paper to concentrate suction."],
-    relationshipToOtherSubsystems: "Maintains substrate flatness directly below the printheads.",
-    practiceQuestion: {
-      question: "How do you achieve maximum hold-down suction on a 2x3 ft sign on an 8x10 ft vacuum bed?",
-      options: ["Turn off the vacuum pump", "Mask all uncovered vacuum zones with scrap paper or vinyl so air cannot bypass", "Stack bricks on the sign", "Wet the board with water"],
-      correctIndex: 1,
-      explanation: "Masking open vacuum orifices prevents atmospheric bypass, generating maximum static differential pressure.",
-    },
-    implicatedInFaults: ["fault_crash"],
-  },
-  {
-    id: "sub_media_feed",
-    name: "11. Media Advance (Step Feed / Y-Axis)",
-    category: "media",
-    gridArea: "media_feed",
-    functionalExplanation: "Gantry stepping drive (on flatbed) or pinch-roller drive (on hybrid) advancing the substrate precisely along the Y-axis between carriage passes.",
-    commonFailureSymptoms: ["Horizontal dark banding (overlap)", "Horizontal white banding (gap)", "Media skew / walk"],
-    observableEvidence: ["Dark line under 10x loupe showing double ink density", "Step calibration target off by 0.2mm"],
-    safeDiagnosticConsiderations: ["Keep fingers clear of high-pressure nip rollers; severe kinetic pinch hazard."],
-    relationshipToOtherSubsystems: "Synchronizes pass-to-pass spacing with the X-axis carriage swaths.",
-    practiceQuestion: {
-      question: "If prints show periodic DARK horizontal lines with a 100% clean nozzle check, what does this indicate?",
-      options: ["Media advanced too far", "Media under-advanced, causing successive passes to overlap and deposit double ink", "The yellow printhead is clogged", "Room humidity is too high"],
-      correctIndex: 1,
-      explanation: "Under-advancement causes swath overlap, creating a dark line.",
-    },
-    implicatedInFaults: ["fault_banding"],
-  },
-  {
-    id: "sub_uv_curing",
-    name: "12. UV-LED Curing Lamp Arrays",
-    category: "curing",
-    gridArea: "uv_curing",
-    functionalExplanation: "High-power 385-395nm UV-LED arrays mounted on the carriage wings providing 8-16 W/cm² irradiance for instant photopolymerization.",
-    commonFailureSymptoms: ["Tacky, uncured ink", "Poor adhesion / flaking", "Substrate heat distortion"],
-    observableEvidence: ["Aerosol ink mist encrusted on quartz window", "Radiometer reads < 300 mW/cm²"],
-    safeDiagnosticConsiderations: ["Wear OD 5+ rated UV eye protection; unshielded UV radiation causes photokeratitis and skin burns."],
-    relationshipToOtherSubsystems: "Polymerizes ink droplets milliseconds after deposition onto the substrate.",
-    practiceQuestion: {
-      question: "What simple maintenance task restores UV lamp curing output when irradiance drops by 50%?",
-      options: ["Replacing the printhead", "Cleaning the protective quartz glass window with optical solvent to remove baked-on ink mist", "Turning off the chiller", "Changing the network cable"],
-      correctIndex: 1,
-      explanation: "Aerosol ink mist coats the quartz window, blocking UV photons from reaching the ink.",
-    },
-    implicatedInFaults: ["fault_curing"],
-  },
-  {
-    id: "sub_finished_output",
-    name: "13. Finished Output & Inspection",
-    category: "media",
-    gridArea: "output",
-    functionalExplanation: "The cured print ready for ASTM cross-hatch tape testing, spectrophotometer color verification, and client delivery.",
-    commonFailureSymptoms: ["Color shift (high Delta E)", "Delamination / flaking", "Surface gloss variation"],
-    observableEvidence: ["Delta E > 2.5 on brand red patch", "Tape test removes ink lattice squares"],
-    safeDiagnosticConsiderations: ["Allow 10 minutes post-cure dark reaction before final spectrophotometric measurement."],
-    relationshipToOtherSubsystems: "The final deliverable representing the cumulative health of all 12 prior subsystems.",
-    practiceQuestion: {
-      question: "Why should you wait 10 to 15 minutes post-cure before measuring Delta E on UV inkjet prints?",
-      options: ["To let the printer cool down", "Because free-radical polymerization continues ('dark cure') for several minutes, subtly stabilizing final color and density", "Because spectrophotometers are slow", "To allow ink to evaporate"],
-      correctIndex: 1,
-      explanation: "Dark reaction completion stabilizes optical density and color coordinates.",
-    },
-    implicatedInFaults: ["fault_curing", "fault_color"],
-  },
+function area(
+  id: string,
+  name: string,
+  category: string,
+  functionalExplanation: string,
+  commonFailureSymptoms: string[],
+  observableEvidence: string[],
+  safeDiagnosticConsiderations: string[],
+  relationshipToOtherSubsystems: string,
+  question: PracticeQuestion,
+  implicatedInFaults: string[],
+): LearningArea {
+  return {
+    id,
+    name,
+    category,
+    functionalExplanation,
+    commonFailureSymptoms,
+    observableEvidence,
+    safeDiagnosticConsiderations,
+    relationshipToOtherSubsystems,
+    practiceQuestion: question,
+    implicatedInFaults,
+  };
+}
+
+const commonSafety = "This is a conceptual learning aid, not an equipment-specific procedure. Use the current manual and site safety program; stop if hazards, authorization, or instructions are unclear.";
+
+const learningAreas: LearningArea[] = [
+  area("source", "1. Source Job & Requirements", "data", "The requested image, output target, material, and customer acceptance criteria define what the configured workflow is expected to produce.", ["Wrong job revision", "Target or material not identified", "Mismatch between requested and processed output"], ["Job identifier and revision", "Approved target and material", "Customer's stated acceptance requirement"], ["Preserve the source file and job identity.", "Do not alter customer files or color settings without authorization."], "The source job enters the configured processing and output workflow.", { question: "What should be confirmed before diagnosing an output mismatch?", options: ["The job revision, material, target, and agreed criteria", "A replacement board for the printer", "A universal ΔE limit"], correctIndex: 0, explanation: "The requirements and comparison context must be known before interpreting a result." }, ["fault_image", "fault_job"]),
+  area("processor", "2. RIP / Job Processing", "data", "A configured software or controller stage may interpret or transform job data for a specific output path. Product boundaries vary.", ["Processing or queue error", "Job differs from intended input", "Delay before transfer"], ["Exact application and version", "Job status and timestamp", "Documented error text"], ["Use approved status tools and preserve relevant logs.", "Do not delete queues, change settings, or expose credentials without owner approval."], "Processed data is passed through the installation's configured queue or interface.", { question: "A job is stalled. What is a useful first question?", options: ["At which configured stage was progress last confirmed?", "Which printer component should be replaced?", "Which security feature should be disabled?"], correctIndex: 0, explanation: "Locating the first observed failure is more informative than guessing a cause." }, ["fault_job"]),
+  area("controller", "3. Device Control & Status", "electronics", "Model-specific controls coordinate device behavior and report status. The internal architecture is not assumed by this illustration.", ["Status or communication warning", "Unexpected pause", "Configuration-dependent behavior"], ["Exact model and software version", "Status display and approved logs", "Time and operating conditions"], ["Record the message before interpreting it.", "Do not open electronics or probe circuits from this lesson."], "Status and configuration affect how a processed job is handled by the device.", { question: "What is the best response to an unfamiliar status message?", options: ["Record it and check current documentation for the exact model/version", "Use a service menu from a similar printer", "Assume the nearest board has failed"], correctIndex: 0, explanation: "Status meanings and procedures are model- and version-specific." }, ["fault_job", "fault_image"]),
+  area("safeguards", "4. Guards, Interlocks & Stop Controls", "safety", "Protective devices and stop controls are part of the machine's safety design; their exact behavior depends on the equipment.", ["Guard or interlock warning", "Protective device appears damaged or bypassed", "Unexpected stop"], ["Visible device condition", "Exact displayed warning", "Site response and equipment records"], ["Never bypass or defeat a protective device.", "A stop command does not itself prove energy isolation; follow the site procedure."], "Protective systems constrain operation and access across the device.", { question: "A protective device appears bypassed. What should a learner recommend?", options: ["Keep people clear, stop the affected work using site procedures, and escalate", "Run one short print to confirm the bypass", "Tape the device in place for observation"], correctIndex: 0, explanation: "A bypass is an uncontrolled hazard; contain it and involve the responsible site authority." }, ["fault_safety"]),
+  area("supplies", "5. Material / Consumable Supply", "materials", "Equipment may use model-specific materials or consumables to form an output; this area is deliberately generic.", ["Supply status warning", "Output changes after a material change", "Unexpected material behavior"], ["Exact material identity and lot when relevant", "Compatibility records", "Device status and job configuration"], ["Check the exact product's approved material list and handling documentation.", "Do not substitute a chemical, ink, or consumable based on a generic example."], "Material identity and availability can affect the process and the resulting output.", { question: "A new material is associated with a changed result. What should be verified?", options: ["The material identity, supported configuration, job setup, and target", "That the same ink works for all materials", "That the operator should add an undocumented coating"], correctIndex: 0, explanation: "Material change is relevant evidence but does not establish a cause or remedy." }, ["fault_material", "fault_image"]),
+  area("fluid", "6. Fluid / Ink Handling (Where Present)", "materials", "Some printing processes use fluids delivered through a product-specific supply path; not all devices use the same materials or architecture.", ["Supply or process warning", "Leak or visible material release", "Inconsistent output"], ["Displayed status", "Material label and current SDS where applicable", "Observed condition without entering a hazard area"], ["Follow the actual SDS, risk assessment, and manufacturer procedure.", "Stop and escalate an unknown leak or exposure; do not open or flush a system from this lesson."], "A material-delivery subsystem, when fitted, interacts with the imaging process.", { question: "What governs the choice of a handling or cleaning material?", options: ["The exact product documentation, SDS, task risk assessment, and authorization", "A solvent used on another printer", "The quickest material available"], correctIndex: 0, explanation: "Compatibility and protection requirements depend on the exact product and task." }, ["fault_material", "fault_image"]),
+  area("imaging", "7. Image-Formation System", "imaging", "The device-specific technology that forms an image on the selected material. This model does not assert a printhead brand or architecture.", ["Missing, shifted, or uneven output", "Banding or other repeated pattern", "Intermittent quality change"], ["Approved diagnostic pattern and its conditions", "Affected job and material", "Repeatability and status messages"], ["A clean test is limited to the conditions it examines.", "Do not touch imaging surfaces or run unapproved maintenance."], "Image formation interacts with motion, material, software, and any process stage present.", { question: "What does a clean static pattern establish?", options: ["That the pattern looked clean under that test condition", "That every dynamic or intermittent fault is impossible", "That media advance is the confirmed cause"], correctIndex: 0, explanation: "A static result is useful but does not rule out every head or dynamic fault." }, ["fault_image"]),
+  area("motion", "8. Motion / Transport", "motion", "Mechanisms may move an imaging assembly, material, or both. Motion architecture and limits vary by exact device.", ["Unexpected movement or pause", "Registration or transport symptom", "Motion-related warning"], ["Status messages and timestamps", "Whether the symptom occurs with a particular job or material", "Authorized observations from outside guarded areas"], ["Keep clear of moving equipment.", "Never enter or inspect a guarded area without the applicable procedure and authorization."], "Movement can affect image placement and can introduce physical hazards.", { question: "A motion-related warning has unknown safety significance. What is appropriate?", options: ["Follow the approved site response and consult the exact manual before further operation", "Run the equipment faster to reproduce it", "Enter the guarded area to look for a loose part"], correctIndex: 0, explanation: "Unknown motion hazards require the approved response, not a provocative or intrusive test." }, ["fault_image", "fault_safety"]),
+  area("feedback", "9. Position / Registration Feedback", "electronics", "A system may use sensors or other feedback to coordinate position or state; this is a functional category, not a universal component list.", ["Position or registration warning", "Repeatability changes", "A result depends on operating conditions"], ["Exact error and time", "Approved output or status comparison", "Device identity and version"], ["Do not infer an encoder type, gap, calibration value, or adjustment procedure.", "Use the exact manual and authorized support."], "Position feedback can be related to motion and image placement.", { question: "A position warning proves which component failed?", options: ["No component is proven; the warning is evidence to interpret using the model-specific procedure", "A linear optical encoder in every case", "The network interface"], correctIndex: 0, explanation: "An error message alone does not identify a failed part." }, ["fault_image", "fault_safety"]),
+  area("support", "10. Media Support / Holding", "materials", "A device may support or retain material during output using model-specific mechanical or other methods.", ["Material shifts or lifts", "Output varies with stock", "Clearance or handling concern"], ["Material identity and loading record", "Visible condition observed from a safe position", "Approved setup guidance"], ["If material is raised near moving parts, stop the affected work and keep clear.", "Never hold material down by hand near operating machinery."], "Material support affects transport and physical clearance.", { question: "Material is raised near moving parts. What should happen first?", options: ["Keep people clear and follow the site's approved stop-work response", "Hold it down while the machine runs", "Bypass the guard to finish the job"], correctIndex: 0, explanation: "A possible collision or entanglement is a stop-work condition." }, ["fault_image", "fault_material", "fault_safety"]),
+  area("process", "11. Curing / Drying (If Fitted)", "process", "A configured output process may include curing or drying, depending on product family and options.", ["Tackiness or adhesion concern", "Material distortion", "Appearance changes after processing"], ["Exact process configuration and status", "Material and ink documentation", "Customer's approved test method"], ["Do not invent a lamp type, setting, wavelength, irradiance, cleaning routine, or cure time.", "Chemical safety requires the exact current SDS and qualified guidance."], "This process, when present, may affect output appearance or handling.", { question: "A customer asks to increase a cure setting on an unidentified system. What is the safe answer?", options: ["Confirm the device, material, approved procedure, and authorization first", "Increase it until the output feels dry", "Copy a value from a different printer"], correctIndex: 0, explanation: "Process limits are product- and material-specific." }, ["fault_material"]),
+  area("environment", "12. Environment & Work Area", "operations", "Site and work-area conditions can influence equipment operation and the safety of a service task.", ["A change coincides with a new symptom", "Dust, moisture, temperature, or access concerns", "Unclear work-area hazards"], ["Customer-reported changes", "Site conditions recorded under approved procedures", "Manufacturer's specified conditions for the exact model"], ["Do not invent environmental limits.", "Stop if the work area or hazard controls are not safe."], "Environment can affect both the equipment and the task context.", { question: "Where should an operating limit come from?", options: ["The current documentation for the exact device and approved site requirements", "A generic training diagram", "A setting from a similar-looking model"], correctIndex: 0, explanation: "Limits vary and must be verified for the exact installation." }, ["fault_material", "fault_safety"]),
+  area("maintenance", "13. Approved Maintenance & References", "operations", "Maintenance and calibration instructions are product-specific and may require training, authorization, and safety controls.", ["A scheduled maintenance reminder", "An unresolved warning", "A reference or calibration concern"], ["Exact model, version, and current manual", "Service history", "Authorized test result"], ["Do not improvise cleaning, calibration, adjustment, or replacement.", commonSafety], "Approved maintenance connects user care, product support, and verified output.", { question: "The exact maintenance procedure is unavailable. What should you do?", options: ["Pause and obtain the current model-specific procedure and qualified authorization", "Use a procedure from another brand", "Try an improvised adjustment"], correctIndex: 0, explanation: "Missing instructions are a reason to stop and obtain authoritative guidance." }, ["fault_safety", "fault_image"]),
+  area("output", "14. Output Review & Measurement", "measurement", "Output can be reviewed against a defined customer target using the agreed visual, physical, or measurement method.", ["Color or quality disagreement", "Acceptance criterion unclear", "Measurements not comparable"], ["Reference target and revision", "Material and measurement conditions", "Result and agreed tolerance"], ["A ΔE value is not a universal pass/fail decision.", "A training screen swatch is not an instrument reading."], "Output review connects the production result back to job requirements.", { question: "What is needed to interpret a color-difference value?", options: ["The agreed target, formula, material, measurement condition, and acceptance limit", "A universal threshold applied to every job", "Only a visual preview on a browser"], correctIndex: 0, explanation: "A number must be interpreted under the applicable agreed method and requirement." }, ["fault_image", "fault_material"]),
 ];
 
-const faultScenarios = [
-  { id: "all", label: "Show All Subsystems" },
-  { id: "fault_banding", label: "Trace: Horizontal Banding" },
-  { id: "fault_curing", label: "Trace: Uncured / Tacky Ink" },
-  { id: "fault_crash", label: "Trace: Head-Strike / Collision Risk" },
-  { id: "fault_color", label: "Trace: Severe Color Shift / Delta E" },
+const filters = [
+  { id: "all", label: "Show All Learning Areas" },
+  { id: "fault_image", label: "Explore: Image-Quality Symptoms" },
+  { id: "fault_job", label: "Explore: Job / Data Symptoms" },
+  { id: "fault_material", label: "Explore: Material / Process Questions" },
+  { id: "fault_safety", label: "Explore: Safety Boundaries" },
 ];
 
 export default function PrinterLabPage() {
-  const [selectedSubsystem, setSelectedSubsystem] = useState<Subsystem>(subsystems[6]); // Printheads default
-  const [activeFault, setActiveFault] = useState<string>("all");
-  const [quizAnswer, setQuizAnswer] = useState<number | null>(null);
+  const [selectedArea, setSelectedArea] = useState<LearningArea>(learningAreas[6]);
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [answer, setAnswer] = useState<number | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
 
-  const handleSelectSubsystem = (sub: Subsystem) => {
-    setSelectedSubsystem(sub);
-    setQuizAnswer(null);
+  const selectArea = (item: LearningArea) => {
+    setSelectedArea(item);
+    setAnswer(null);
     setShowExplanation(false);
   };
 
-  const isSubsystemImplicated = (sub: Subsystem) => {
-    if (activeFault === "all") return true;
-    return sub.implicatedInFaults.includes(activeFault);
-  };
+  const visibleAreas = learningAreas.filter((item) => activeFilter === "all" || item.implicatedInFaults.includes(activeFilter));
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
         <div>
           <div className="flex items-center space-x-2 text-xs font-mono text-amber-400 font-semibold uppercase tracking-wider">
             <Cpu className="w-4 h-4" />
-            <span>Industrial Hardware Subsystems</span>
+            <span>Interactive Printer-Systems Learning Lab</span>
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight mt-1">
-            Platinum Printer Architecture Lab
-          </h1>
-          <p className="text-xs text-slate-400 max-w-2xl">
-            Conceptual educational model of an industrial UV-LED flatbed/hybrid printer. Click any subsystem to examine electromechanics, failure modes, diagnostic considerations, and practice questions.
+          <h1 className="text-2xl font-bold text-white tracking-tight mt-1">Industrial Printer Systems Lab</h1>
+          <p className="text-xs text-slate-400 max-w-3xl leading-relaxed">
+            Select a conceptual functional area to review possible symptoms, safe evidence questions, and a practice prompt. This independent model is not a Platinum schematic, universal parts list, or service procedure; configurations vary by exact device.
           </p>
         </div>
-
         <div className="flex items-center space-x-2 no-print">
-          <span className="text-[11px] font-mono text-slate-400">Trace the Fault Mode:</span>
-          <select
-            value={activeFault}
-            onChange={(e) => setActiveFault(e.target.value)}
-            className="bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-xs font-medium focus:ring-1 focus:ring-amber-500"
-          >
-            {faultScenarios.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.label}
-              </option>
-            ))}
+          <span className="text-[11px] font-mono text-slate-400">Explore areas:</span>
+          <select value={activeFilter} onChange={(event) => setActiveFilter(event.target.value)} className="bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-xs font-medium focus:ring-1 focus:ring-amber-500">
+            {filters.map((filter) => <option key={filter.id} value={filter.id}>{filter.label}</option>)}
           </select>
         </div>
       </div>
 
-      {/* Main Grid: Architecture Visualization + Detail Panel */}
+      <div className="rounded-lg border border-amber-700/40 bg-amber-950/20 p-3 text-xs text-amber-200">
+        <strong>Scope:</strong> The 14 tiles below are learning categories only—not a claim that every printer has these parts or uses one architecture. Highlighted areas are questions to consider, not predicted root causes.
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left: Interactive Printer Architecture Model (7 cols) */}
         <div className="lg:col-span-7 bg-[#070C14] border border-slate-800 rounded-xl p-5 shadow-2xl space-y-4">
           <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 border-b border-slate-850 pb-2">
-            <span>PLATINUM UV-LED FLATBED ARCHITECTURE</span>
-            <span className="text-amber-400">13 INTERCONNECTED SUBSYSTEMS</span>
+            <span>CONCEPTUAL FUNCTIONAL AREAS</span>
+            <span className="text-amber-400">NOT A MODEL SCHEMATIC</span>
           </div>
-
-          {/* Conceptual Chassis Layout */}
-          <div className="grid grid-cols-3 gap-2.5 text-xs">
-            {subsystems.map((sub) => {
-              const isSelected = selectedSubsystem.id === sub.id;
-              const isImplicated = isSubsystemImplicated(sub);
-
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+            {visibleAreas.map((item) => {
+              const selected = selectedArea.id === item.id;
               return (
-                <button
-                  key={sub.id}
-                  onClick={() => handleSelectSubsystem(sub)}
-                  className={`p-3 rounded-lg border text-left transition-all duration-200 flex flex-col justify-between ${
-                    isSelected
-                      ? "bg-amber-500/15 border-amber-500 text-white shadow-lg shadow-amber-500/10 ring-1 ring-amber-500"
-                      : isImplicated
-                      ? "bg-slate-900/90 border-slate-700 hover:border-slate-600 text-slate-200"
-                      : "bg-slate-950/40 border-slate-850 text-slate-600 opacity-40 hover:opacity-75"
-                  }`}
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
-                        {sub.category}
-                      </span>
-                      {activeFault !== "all" && isImplicated && (
-                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-                      )}
-                    </div>
-                    <div className="font-semibold text-xs leading-snug line-clamp-2">
-                      {sub.name}
-                    </div>
-                  </div>
-
-                  <div className="mt-2 text-[10px] text-slate-400 flex items-center justify-between pt-1 border-t border-slate-800/60">
-                    <span className="truncate">{sub.commonFailureSymptoms[0]}</span>
-                    <ArrowRight className="w-3 h-3 shrink-0 ml-1 opacity-60" />
-                  </div>
+                <button key={item.id} onClick={() => selectArea(item)} className={`p-3 rounded-lg border text-left transition-all min-h-[92px] ${selected ? "bg-amber-500/15 border-amber-500 text-white ring-1 ring-amber-500" : "bg-slate-900/90 border-slate-700 hover:border-slate-500 text-slate-200"}`}>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-1">{item.category}</span>
+                  <span className="font-semibold leading-snug">{item.name}</span>
+                  <span className="mt-2 flex items-center justify-between border-t border-slate-800/60 pt-1 text-[10px] text-slate-400">
+                    <span className="truncate">{item.commonFailureSymptoms[0]}</span><ArrowRight className="ml-1 h-3 w-3 shrink-0 opacity-60" />
+                  </span>
                 </button>
               );
             })}
           </div>
-
-          {/* Fault Legend Callout */}
-          {activeFault !== "all" && (
-            <div className="bg-amber-950/20 border border-amber-900/40 rounded-lg p-3 text-xs flex items-center justify-between text-amber-300">
-              <div className="flex items-center space-x-2">
-                <AlertTriangle className="w-4 h-4 text-amber-400" />
-                <span>
-                  <strong>Trace Mode Active:</strong> Subsystems highlighted with pulsating dots are potential root causes for this symptom.
-                </span>
-              </div>
-              <button
-                onClick={() => setActiveFault("all")}
-                className="text-[11px] underline text-amber-400 hover:text-white"
-              >
-                Reset Filter
-              </button>
+          {activeFilter !== "all" && (
+            <div className="bg-amber-950/20 border border-amber-900/40 rounded-lg p-3 text-xs text-amber-300 flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2"><AlertTriangle className="w-4 h-4 shrink-0" /><strong>Exploration filter:</strong> selected areas are possible lines of inquiry, not a diagnosis.</span>
+              <button onClick={() => setActiveFilter("all")} className="text-[11px] underline shrink-0">Reset</button>
             </div>
           )}
         </div>
 
-        {/* Right: Subsystem Deep Dive (5 cols) */}
         <div className="lg:col-span-5 bg-[#0F1A2E] border border-slate-800 rounded-xl p-6 shadow-2xl space-y-5">
-          {/* Header */}
           <div className="border-b border-slate-800 pb-4">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono uppercase text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">
-                {selectedSubsystem.category.toUpperCase()} DOMAIN
-              </span>
-              <span className="text-[10px] font-mono text-slate-500">Conceptual Educational Model</span>
+              <span className="text-[10px] font-mono uppercase text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">{selectedArea.category}</span>
+              <span className="text-[10px] font-mono text-slate-500">Conceptual educational model</span>
             </div>
-            <h2 className="text-xl font-bold text-white mt-1.5">{selectedSubsystem.name}</h2>
-            <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-              {selectedSubsystem.functionalExplanation}
-            </p>
+            <h2 className="text-xl font-bold text-white mt-1.5">{selectedArea.name}</h2>
+            <p className="text-xs text-slate-300 mt-2 leading-relaxed">{selectedArea.functionalExplanation}</p>
           </div>
 
-          {/* Observable Evidence & Symptoms */}
           <div className="space-y-3 text-xs">
             <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-800 space-y-1">
-              <div className="text-[10px] font-mono text-amber-400 font-bold uppercase flex items-center space-x-1.5">
-                <AlertTriangle className="w-3.5 h-3.5" />
-                <span>Common Failure Symptoms</span>
-              </div>
-              <ul className="space-y-1 text-slate-300 text-[11px] pt-1">
-                {selectedSubsystem.commonFailureSymptoms.map((s, idx) => (
-                  <li key={idx} className="leading-snug">• {s}</li>
-                ))}
-              </ul>
+              <div className="text-[10px] font-mono text-amber-400 font-bold uppercase flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" />Possible symptoms</div>
+              <ul className="space-y-1 text-slate-300 text-[11px] pt-1">{selectedArea.commonFailureSymptoms.map((item, index) => <li key={index}>• {item}</li>)}</ul>
             </div>
-
             <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-800 space-y-1">
-              <div className="text-[10px] font-mono text-teal-400 font-bold uppercase flex items-center space-x-1.5">
-                <Eye className="w-3.5 h-3.5" />
-                <span>Observable Field Evidence</span>
-              </div>
-              <ul className="space-y-1 text-slate-300 text-[11px] pt-1">
-                {selectedSubsystem.observableEvidence.map((e, idx) => (
-                  <li key={idx} className="leading-snug">• {e}</li>
-                ))}
-              </ul>
+              <div className="text-[10px] font-mono text-teal-400 font-bold uppercase flex items-center gap-1.5"><Eye className="w-3.5 h-3.5" />Evidence to record</div>
+              <ul className="space-y-1 text-slate-300 text-[11px] pt-1">{selectedArea.observableEvidence.map((item, index) => <li key={index}>• {item}</li>)}</ul>
             </div>
-
             <div className="bg-rose-950/20 border border-rose-900/40 rounded-lg p-3 space-y-1">
-              <div className="text-[10px] font-mono text-rose-400 font-bold uppercase flex items-center space-x-1.5">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Safe Diagnostic Considerations</span>
-              </div>
-              <ul className="space-y-1 text-slate-300 text-[11px] pt-1">
-                {selectedSubsystem.safeDiagnosticConsiderations.map((c, idx) => (
-                  <li key={idx} className="leading-snug">⚠️ {c}</li>
-                ))}
-              </ul>
+              <div className="text-[10px] font-mono text-rose-400 font-bold uppercase flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5" />Safety boundary</div>
+              <ul className="space-y-1 text-slate-300 text-[11px] pt-1">{selectedArea.safeDiagnosticConsiderations.map((item, index) => <li key={index}>⚠️ {item}</li>)}</ul>
             </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed"><strong>Relationship:</strong> {selectedArea.relationshipToOtherSubsystems}</p>
           </div>
 
-          {/* Subsystem Practice Question */}
           <div className="bg-[#070C14] border border-slate-800 rounded-lg p-4 space-y-3 text-xs">
-            <div className="flex items-center space-x-1.5 text-slate-400 text-[10px] font-mono uppercase font-bold">
-              <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
-              <span>Subsystem Diagnostic Check</span>
-            </div>
-            <p className="font-semibold text-slate-200">
-              {selectedSubsystem.practiceQuestion.question}
-            </p>
-
+            <div className="flex items-center gap-1.5 text-slate-400 text-[10px] font-mono uppercase font-bold"><HelpCircle className="w-3.5 h-3.5 text-amber-400" />Practice question</div>
+            <p className="font-semibold text-slate-200">{selectedArea.practiceQuestion.question}</p>
             <div className="space-y-1.5">
-              {selectedSubsystem.practiceQuestion.options.map((opt, idx) => {
-                const isSelected = quizAnswer === idx;
-                const isCorrect = idx === selectedSubsystem.practiceQuestion.correctIndex;
-
-                let btnStyle = "bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-850";
-                if (showExplanation) {
-                  if (isCorrect) btnStyle = "bg-emerald-950/60 border-emerald-600 text-emerald-200";
-                  else if (isSelected) btnStyle = "bg-rose-950/60 border-rose-600 text-rose-200";
-                } else if (isSelected) {
-                  btnStyle = "bg-amber-500/20 border-amber-500 text-white";
-                }
-
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => {
-                      setQuizAnswer(idx);
-                      setShowExplanation(true);
-                    }}
-                    className={`w-full text-left p-2 rounded border text-[11px] transition-colors ${btnStyle}`}
-                  >
-                    {opt}
-                  </button>
-                );
+              {selectedArea.practiceQuestion.options.map((option, index) => {
+                const selected = answer === index;
+                const correct = index === selectedArea.practiceQuestion.correctIndex;
+                const style = showExplanation ? correct ? "bg-emerald-950/60 border-emerald-600 text-emerald-200" : selected ? "bg-rose-950/60 border-rose-600 text-rose-200" : "bg-slate-900 text-slate-400 border-slate-800" : selected ? "bg-amber-500/20 border-amber-500 text-white" : "bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-850";
+                return <button key={index} onClick={() => { setAnswer(index); setShowExplanation(true); }} className={`w-full text-left p-2 rounded border text-[11px] transition-colors ${style}`}>{option}</button>;
               })}
             </div>
-
-            {showExplanation && (
-              <div className="p-2.5 rounded bg-slate-900 border border-slate-800 text-[11px] text-slate-300 space-y-1">
-                <div className="font-bold text-teal-400 flex items-center space-x-1">
-                  <CheckCircle2 className="w-3 h-3" />
-                  <span>Technical Rationale:</span>
-                </div>
-                <p className="leading-relaxed">
-                  {selectedSubsystem.practiceQuestion.explanation}
-                </p>
-              </div>
-            )}
+            {showExplanation && <div className="p-2.5 rounded bg-slate-900 border border-slate-800 text-[11px] text-slate-300 space-y-1"><div className="font-bold text-teal-400 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" />Rationale</div><p>{selectedArea.practiceQuestion.explanation}</p></div>}
           </div>
         </div>
       </div>

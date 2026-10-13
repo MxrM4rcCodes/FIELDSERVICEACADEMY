@@ -1,150 +1,131 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { query } from "@/lib/db";
+import { recalculateCompetency, type CompetencyDomain } from "@/lib/competency";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
     const user = await getCurrentUser();
-    const userId = user?.id || "usr_learner_01";
+    if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
 
-    const questionsRes = await query(
+    const questions = await query(
       `SELECT id, question_text, category, competency_domain, difficulty,
-              model_answer, evaluation_rubric, transferable_skills_tips, sort_order
-       FROM interview_questions
-       ORDER BY sort_order ASC;`
+              evaluation_rubric, transferable_skills_tips, sort_order
+         FROM interview_questions
+        ORDER BY sort_order`,
     );
-
-    const attemptsRes = await query(
+    const attempts = await query(
       `SELECT question_id, user_answer, score_technical, score_safety,
               score_communication, score_verification, score_clarity,
               total_score, feedback_text, created_at
-       FROM interview_attempts
-       WHERE user_id = $1
-       ORDER BY created_at DESC;`,
-      [userId]
+         FROM interview_attempts
+        WHERE user_id = $1
+        ORDER BY created_at DESC`,
+      [user.id],
     );
-
-    return NextResponse.json({
-      questions: questionsRes.rows,
-      attempts: attemptsRes.rows,
-    });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to load interview studio" }, { status: 500 });
+    return NextResponse.json({ questions: questions.rows, attempts: attempts.rows });
+  } catch (error) {
+    console.error("Interview studio read failed", error);
+    return NextResponse.json({ error: "Unable to load interview practice." }, { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+
+    const body = await req.json().catch(() => null);
+    const questionId = typeof body?.questionId === "string" ? body.questionId : "";
+    const userAnswer = typeof body?.userAnswer === "string" ? body.userAnswer.trim() : "";
+    if (!questionId || userAnswer.length < 10 || userAnswer.length > 5000) {
+      return NextResponse.json({ error: "Write a response between 10 and 5,000 characters." }, { status: 400 });
     }
 
-    const { questionId, userAnswer } = await req.json();
-
-    if (!questionId || !userAnswer || userAnswer.trim().length < 10) {
-      return NextResponse.json({ error: "Please write a comprehensive response (at least 10 characters)." }, { status: 400 });
-    }
-
-    const qRes = await query(
-      "SELECT id, question_text, model_answer, evaluation_rubric FROM interview_questions WHERE id = $1;",
-      [questionId]
+    const result = await query<{
+      id: string;
+      competency_domain: string;
+      model_answer: string;
+    }>(
+      "SELECT id, competency_domain, model_answer FROM interview_questions WHERE id = $1",
+      [questionId],
     );
-    if (qRes.rows.length === 0) {
-      return NextResponse.json({ error: "Question not found" }, { status: 404 });
-    }
-    const question = qRes.rows[0];
+    const question = result.rows[0];
+    if (!question) return NextResponse.json({ error: "Question not found" }, { status: 404 });
 
-    // Transparent Rule-Based Evaluation Rubric
-    // Analyzes presence of key technical concepts, safety principles, customer-service phrasing, and STAR structure
-    const lower = userAnswer.toLowerCase();
+    // Transparent keyword/structure rubric. This is rule-based practice feedback, not AI or a judgment of technical truth.
+    const text = userAnswer.toLowerCase();
+    const wordCount = userAnswer.split(/\s+/).filter(Boolean).length;
+    const includesAny = (terms: string[]) => terms.some((term) => text.includes(term));
 
-    // 1. Technical Reasoning (0-20)
-    let scoreTech = 10;
-    if (lower.includes("nozzle") || lower.includes("sub-tank") || lower.includes("vacuum") || lower.includes("delta e") || lower.includes("cielab") || lower.includes("encoder") || lower.includes("schematic")) scoreTech += 4;
-    if (lower.includes("calibrate") || lower.includes("lineariz") || lower.includes("meniscus") || lower.includes("multimeter") || lower.includes("spectrophotometer")) scoreTech += 4;
-    if (lower.includes("least-invasive") || lower.includes("isolate") || lower.includes("root cause")) scoreTech += 2;
-    scoreTech = Math.min(20, scoreTech);
+    const technical = [
+      includesAny(["nozzle", "media advance", "encoder", "printhead", "motion", "rip", "icc", "delta e", "cielab", "scanner", "calibration", "profile"]) ? 5 : 0,
+      includesAny(["evidence", "test", "measure", "observe", "compare", "isolate"]) ? 5 : 0,
+      includesAny(["hypothesis", "root cause", "alternative cause", "rule out"]) ? 5 : 0,
+      includesAny(["least-invasive", "controlled test", "reproduce", "configuration"]) ? 5 : 0,
+    ].reduce((sum, part) => sum + part, 0);
 
-    // 2. Safety Awareness (0-20)
-    let scoreSafety = 10;
-    if (lower.includes("lockout") || lower.includes("loto") || lower.includes("e-stop") || lower.includes("zero-energy") || lower.includes("disconnect")) scoreSafety += 5;
-    if (lower.includes("ppe") || lower.includes("nitrile") || lower.includes("goggles") || lower.includes("meter") || lower.includes("capacitor")) scoreSafety += 5;
-    scoreSafety = Math.min(20, scoreSafety);
+    const safety = [
+      includesAny(["hazard", "risk", "safe", "safety assessment"]) ? 5 : 0,
+      includesAny(["lockout", "loto", "energy isolation", "isolate energy"]) ? 5 : 0,
+      includesAny(["ppe", "gloves", "eye protection", "guard", "interlock"]) ? 5 : 0,
+      includesAny(["stop", "shutdown", "escalate", "authorized", "manufacturer procedure"]) ? 5 : 0,
+    ].reduce((sum, part) => sum + part, 0);
 
-    // 3. Customer Communication (0-20)
-    let scoreComm = 10;
-    if (lower.includes("listen") || lower.includes("empath") || lower.includes("calm") || lower.includes("urgency") || lower.includes("deadline")) scoreComm += 5;
-    if (lower.includes("update") || lower.includes("timeline") || lower.includes("expectation") || lower.includes("train")) scoreComm += 5;
-    scoreComm = Math.min(20, scoreComm);
+    const communication = [
+      includesAny(["listen", "clarify", "ask the customer", "customer reports"]) ? 5 : 0,
+      includesAny(["explain", "update", "communicate", "confirm understanding"]) ? 5 : 0,
+      includesAny(["expectation", "timeline", "impact", "production priority"]) ? 5 : 0,
+      includesAny(["train", "show the operator", "handoff", "follow-up"]) ? 5 : 0,
+    ].reduce((sum, part) => sum + part, 0);
 
-    // 4. Verification & Documentation (0-20)
-    let scoreVerif = 10;
-    if (lower.includes("test print") || lower.includes("verify") || lower.includes("measure") || lower.includes("check")) scoreVerif += 4;
-    if (lower.includes("ticket") || lower.includes("document") || lower.includes("signoff") || lower.includes("fat") || lower.includes("sat")) scoreVerif += 4;
-    if (lower.includes("data") || lower.includes("log") || lower.includes("report")) scoreVerif += 2;
-    scoreVerif = Math.min(20, scoreVerif);
+    const verification = [
+      includesAny(["verify", "verification", "acceptance criteria", "test print", "reference target"]) ? 5 : 0,
+      includesAny(["before and after", "baseline", "repeat", "retest"]) ? 5 : 0,
+      includesAny(["document", "ticket", "service report", "record"]) ? 5 : 0,
+      includesAny(["result", "measurement", "evidence", "sign-off", "signoff"]) ? 5 : 0,
+    ].reduce((sum, part) => sum + part, 0);
 
-    // 5. Clarity & Structure (0-20)
-    const wordCount = userAnswer.trim().split(/\s+/).length;
-    let scoreClarity = 10;
-    if (wordCount >= 40) scoreClarity += 4;
-    if (wordCount >= 80) scoreClarity += 4;
-    if (lower.includes("first") || lower.includes("then") || lower.includes("finally") || lower.includes("situation") || lower.includes("result")) scoreClarity += 2;
-    scoreClarity = Math.min(20, scoreClarity);
+    const clarity = Math.min(10, Math.floor(wordCount / 15))
+      + (includesAny(["first", "next", "then"]) ? 5 : 0)
+      + (includesAny(["finally", "therefore", "because"]) ? 5 : 0);
+    const total = technical + safety + communication + verification + clarity;
 
-    const totalScore = scoreTech + scoreSafety + scoreComm + scoreVerif + scoreClarity;
-
-    const feedbackText = `Scored ${totalScore}/100 across 5 dimensions: Technical (${scoreTech}/20), Safety (${scoreSafety}/20), Communication (${scoreComm}/20), Verification (${scoreVerif}/20), Clarity (${scoreClarity}/20). Your response shows good technical grounding. Compare your answer against the model answer below to incorporate exact Plymouth facility details and quantitative benchmarks.`;
-
-    const attemptId = `inta_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const improvement = [
+      technical < 15 ? "state a testable technical hypothesis and the evidence that would support it" : null,
+      safety < 15 ? "start with a hazard check and define when you would stop or escalate" : null,
+      communication < 15 ? "explain how you would update the customer and agree on next steps" : null,
+      verification < 15 ? "define an acceptance check and what you would record" : null,
+      clarity < 10 ? "organize the response into a concise sequence (first, next, finally)" : null,
+    ].filter(Boolean);
+    const feedback = `Rule-based practice score: ${total}/100. This transparent keyword-and-structure rubric does not evaluate technical truth or use AI. ${improvement.length ? `For another attempt, consider: ${improvement.join("; ")}.` : "Your response included markers across all five rubric areas; compare it with the model answer and adapt it to your real experience."}`;
+    const attemptId = crypto.randomUUID();
 
     await query(
       `INSERT INTO interview_attempts (
         id, user_id, question_id, user_answer, score_technical, score_safety,
         score_communication, score_verification, score_clarity, total_score, feedback_text
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);`,
-      [
-        attemptId,
-        user.id,
-        questionId,
-        userAnswer,
-        scoreTech,
-        scoreSafety,
-        scoreComm,
-        scoreVerif,
-        scoreClarity,
-        totalScore,
-        feedbackText,
-      ]
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [attemptId, user.id, questionId, userAnswer, technical, safety, communication, verification, clarity, total, feedback],
     );
 
-    // Update company_interview competency score
-    await query(
-      `UPDATE competency_scores 
-       SET observed_score = LEAST(100.0, observed_score + 5.0),
-           total_evaluations = total_evaluations + 1,
-           updated_at = CURRENT_TIMESTAMP
-       WHERE user_id = $1 AND domain = 'company_interview';`,
-      [user.id]
-    );
+    const domain = question.competency_domain as CompetencyDomain;
+    if (domain in { hardware_safety: 1, color_oris: 1, metis_scanning: 1, customer_docs: 1, company_interview: 1 }) {
+      await recalculateCompetency(user.id, domain);
+    }
 
     return NextResponse.json({
       success: true,
-      scores: {
-        technical: scoreTech,
-        safety: scoreSafety,
-        communication: scoreComm,
-        verification: scoreVerif,
-        clarity: scoreClarity,
-        total: totalScore,
-      },
-      feedback: feedbackText,
+      attemptId,
+      evaluationType: "rule_based",
+      scores: { technical, safety, communication, verification, clarity, total },
+      feedback,
       modelAnswer: question.model_answer,
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to submit interview response" }, { status: 500 });
+  } catch (error) {
+    console.error("Interview attempt save failed", error);
+    return NextResponse.json({ error: "Unable to save this practice response." }, { status: 500 });
   }
 }

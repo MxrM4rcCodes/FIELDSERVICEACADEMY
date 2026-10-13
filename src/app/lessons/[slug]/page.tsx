@@ -55,6 +55,42 @@ export default function LessonPlayerPage() {
     }
   }, [slug]);
 
+  useEffect(() => {
+    if (!slug || !data?.lesson?.id) return;
+    let lastSavedAt = Date.now();
+    const saveElapsedTime = async () => {
+      const now = Date.now();
+      const elapsedSeconds = Math.min(3600, Math.floor((now - lastSavedAt) / 1000));
+      lastSavedAt = now;
+      try {
+        await fetch(`/api/lessons/${slug}/progress`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "in_progress", timeSpentSeconds: elapsedSeconds }),
+          keepalive: true,
+        });
+      } catch (error) {
+        console.error("Could not save lesson reading progress", error);
+      }
+    };
+
+    void fetch(`/api/lessons/${slug}/progress`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "in_progress", timeSpentSeconds: 0 }),
+    });
+    const timer = window.setInterval(saveElapsedTime, 30_000);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") void saveElapsedTime();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      void saveElapsedTime();
+    };
+  }, [slug, data?.lesson?.id]);
+
   const handleSelectOption = (questionId: string, optionId: string) => {
     if (quizResult) return; // Prevent changing after submit
     setQuizAnswers((prev) => ({
@@ -201,6 +237,19 @@ export default function LessonPlayerPage() {
         </div>
       </div>
 
+      {lesson.slug === "day-01-cgs-oris-and-field-service" && (
+        <a
+          href="/systems-map"
+          className="flex items-center justify-between gap-4 rounded-xl border border-teal-500/30 bg-teal-950/25 p-5 text-left transition-colors hover:border-teal-400/60 hover:bg-teal-950/40"
+        >
+          <span>
+            <span className="block text-sm font-bold text-teal-200">Explore the interactive systems map</span>
+            <span className="mt-1 block text-xs text-slate-300">Trace an illustrative workflow, select a stage, and review its inputs, outputs, and diagnostic questions. Product connections vary by configuration.</span>
+          </span>
+          <ChevronRight className="h-5 w-5 shrink-0 text-teal-300" aria-hidden="true" />
+        </a>
+      )}
+
       {/* Teaching Sections Content Blocks */}
       <div className="space-y-6">
         {blocks?.map((block: any, idx: number) => {
@@ -276,7 +325,7 @@ export default function LessonPlayerPage() {
       {sourceReference && (
         <div className="bg-[#070C14] border border-slate-800 rounded-xl p-4 text-xs space-y-1.5 font-mono">
           <div className="text-[10px] uppercase text-slate-400 font-bold flex items-center justify-between">
-            <span>Authoritative Source & Reference Spec</span>
+            <span>Sources, scope &amp; confidence notes</span>
             <span className="text-teal-400">Status: {sourceReference.confidence_level}</span>
           </div>
           <div className="font-semibold text-slate-200">{sourceReference.title}</div>
@@ -336,12 +385,13 @@ export default function LessonPlayerPage() {
                   <div className="space-y-2 pt-1">
                     {q.options?.map((opt: any) => {
                       const isSelected = selectedOptId === opt.id;
+                      const optionFeedback = evalInfo?.optionFeedback?.find((item: any) => item.id === opt.id);
                       let optionStyle = "bg-slate-950/60 border-slate-800 text-slate-300 hover:bg-slate-850";
 
                       if (quizResult) {
-                        if (opt.is_correct) {
+                        if (optionFeedback?.isCorrect) {
                           optionStyle = "bg-emerald-950/60 border-emerald-500 text-emerald-200 font-semibold";
-                        } else if (isSelected && !opt.is_correct) {
+                        } else if (isSelected) {
                           optionStyle = "bg-rose-950/60 border-rose-500 text-rose-200";
                         }
                       } else if (isSelected) {
@@ -355,13 +405,18 @@ export default function LessonPlayerPage() {
                           onClick={() => handleSelectOption(q.id, opt.id)}
                           className={`w-full text-left p-3 rounded-lg border text-xs transition-all flex items-center justify-between ${optionStyle}`}
                         >
-                          <span className="pr-3 leading-snug">{opt.option_text}</span>
-                          {quizResult && opt.is_correct && (
+                          <span className="pr-3 leading-snug flex-1">
+                            <span className="block">{opt.option_text}</span>
+                            {quizResult && optionFeedback && (
+                              <span className="block mt-1 text-[10px] font-normal opacity-80">{optionFeedback.explanation}</span>
+                            )}
+                          </span>
+                          {quizResult && optionFeedback?.isCorrect && (
                             <span className="text-emerald-400 font-bold shrink-0 text-[10px] font-mono">
                               ✓ Correct
                             </span>
                           )}
-                          {quizResult && isSelected && !opt.is_correct && (
+                          {quizResult && isSelected && !optionFeedback?.isCorrect && (
                             <span className="text-rose-400 font-bold shrink-0 text-[10px] font-mono">
                               ✗ Selected
                             </span>

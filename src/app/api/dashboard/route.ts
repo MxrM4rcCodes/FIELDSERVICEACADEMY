@@ -1,135 +1,136 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { query } from "@/lib/db";
+import { COMPETENCY_WEIGHTS, type CompetencyDomain } from "@/lib/competency";
 
 export const dynamic = "force-dynamic";
+
+const reviewTargets: Record<CompetencyDomain, { lesson: string; title: string }> = {
+  hardware_safety: { lesson: "day-03-equipment-safety", title: "Hazardous Energy & LOTO Principles" },
+  color_oris: { lesson: "day-07-color-science-icc-profiles-and-delta-e", title: "Color Science and Measurement" },
+  metis_scanning: { lesson: "day-09-metis-scanning-and-material-surface-imaging", title: "METIS Scanning & Imaging" },
+  customer_docs: { lesson: "day-12-customer-support-and-documentation", title: "Customer Support & Documentation" },
+  company_interview: { lesson: "day-01-cgs-oris-and-field-service", title: "Company & Field Service Foundations" },
+};
 
 export async function GET() {
   try {
     const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
 
-    // 1. Profile and Interview Countdown
-    const profileRes = await query(
-      `SELECT target_interview_date, active_track, notes, experience_level 
-       FROM profiles WHERE user_id = $1;`,
-      [user.id]
+    const profileResult = await query<{
+      target_interview_date: string | null;
+      active_track: "course_14" | "bootcamp";
+      experience_level: string;
+    }>(
+      `SELECT target_interview_date, active_track, experience_level
+         FROM profiles WHERE user_id = $1`,
+      [user.id],
     );
-    const profile = profileRes.rows[0] || {
-      target_interview_date: "2026-10-26",
-      active_track: "course_14",
-    };
+    const profile = profileResult.rows[0];
+    if (!profile) return NextResponse.json({ error: "Learner profile not found" }, { status: 404 });
 
-    // Calculate days remaining
-    const targetDate = new Date(profile.target_interview_date);
-    const now = new Date();
-    const diffTime = targetDate.getTime() - now.getTime();
-    const daysRemaining = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
-
-    // 2. Course Progress
-    const totalLessonsRes = await query("SELECT count(*) FROM lessons;");
-    const totalLessons = parseInt(totalLessonsRes.rows[0]?.count || "14", 10);
-
-    const progressRes = await query(
-      `SELECT l.id, l.day_number, l.title, l.slug, l.competency_domain, l.estimated_minutes,
-              lp.status, lp.time_spent_seconds, lp.completed_at
-       FROM lessons l
-       LEFT JOIN lesson_progress lp ON lp.lesson_id = l.id AND lp.user_id = $1
-       ORDER BY l.day_number ASC;`,
-      [user.id]
+    const lessonResult = await query(
+      `SELECT l.id, l.day_number, l.bootcamp_day_number, l.title, l.slug,
+              l.competency_domain, l.estimated_minutes,
+              COALESCE(lp.status, 'not_started') AS status,
+              COALESCE(lp.time_spent_seconds, 0) AS time_spent_seconds,
+              lp.completed_at
+         FROM lessons l
+         LEFT JOIN lesson_progress lp ON lp.lesson_id = l.id AND lp.user_id = $1
+        ORDER BY l.day_number`,
+      [user.id],
     );
+    const lessons = lessonResult.rows;
+    const trackLessons = profile.active_track === "bootcamp"
+      ? lessons.filter((lesson: any) => lesson.bootcamp_day_number !== null)
+      : lessons;
+    const completedCount = trackLessons.filter((lesson: any) => lesson.status === "completed").length;
+    const inProgressCount = trackLessons.filter((lesson: any) => lesson.status === "in_progress").length;
+    const totalLessons = trackLessons.length;
+    const overallProgressPercent = totalLessons ? Math.round((completedCount / totalLessons) * 100) : 0;
+    const nextLesson = trackLessons.find((lesson: any) => lesson.status === "in_progress")
+      || trackLessons.find((lesson: any) => lesson.status !== "completed")
+      || null;
 
-    const lessons = progressRes.rows;
-    const completedCount = lessons.filter((l) => l.status === "completed").length;
-    const inProgressCount = lessons.filter((l) => l.status === "in_progress").length;
-    const overallProgressPercent = Math.round((completedCount / totalLessons) * 100);
-
-    // Find next resume lesson
-    const nextLesson =
-      lessons.find((l) => l.status === "in_progress") ||
-      lessons.find((l) => l.status !== "completed") ||
-      lessons[0];
-
-    // 3. Competency Scores
-    const compRes = await query(
+    const competencyResult = await query(
       `SELECT domain, observed_score, weight_percentage, total_evaluations, updated_at
-       FROM competency_scores WHERE user_id = $1
-       ORDER BY weight_percentage DESC;`,
-      [user.id]
+         FROM competency_scores
+        WHERE user_id = $1
+        ORDER BY weight_percentage DESC`,
+      [user.id],
     );
+    const competencyRows = competencyResult.rows.length
+      ? competencyResult.rows
+      : Object.entries(COMPETENCY_WEIGHTS).map(([domain, weight]) => ({
+          domain, observed_score: 0, weight_percentage: weight, total_evaluations: 0, updated_at: null,
+        }));
+    const assessed = competencyRows.filter((row: any) => Number(row.total_evaluations) > 0);
+    const weakest = assessed.sort((a: any, b: any) => Number(a.observed_score) - Number(b.observed_score))[0] || null;
 
-    let competencies = compRes.rows;
-    if (competencies.length === 0) {
-      // Default domain weights
-      competencies = [
-        { domain: "hardware_safety", observed_score: "45.00", weight_percentage: "35.00", total_evaluations: 3 },
-        { domain: "color_oris", observed_score: "32.00", weight_percentage: "25.00", total_evaluations: 2 },
-        { domain: "metis_scanning", observed_score: "25.00", weight_percentage: "15.00", total_evaluations: 1 },
-        { domain: "customer_docs", observed_score: "50.00", weight_percentage: "15.00", total_evaluations: 2 },
-        { domain: "company_interview", observed_score: "40.00", weight_percentage: "10.00", total_evaluations: 2 },
-      ];
-    }
-
-    // Find weakest domain
-    const sortedByScore = [...competencies].sort(
-      (a, b) => parseFloat(a.observed_score) - parseFloat(b.observed_score)
-    );
-    const weakestDomain = sortedByScore[0]?.domain || "metis_scanning";
-
-    // 4. Adaptive Recommendation Engine
-    let recommendedAction = {
-      type: "lesson",
-      title: "METIS Scanning and Material Surface Imaging",
-      slug: "day-09-metis-scanning-and-material-surface-imaging",
-      domain: "metis_scanning",
-      reason: `Your lowest competency score is in METIS Scanning (${sortedByScore[0]?.observed_score}%). Reviewing Day 9 will strengthen your surface capture and optical calibration foundation.`,
-    };
-
-    if (weakestDomain === "color_oris") {
+    let recommendedAction;
+    if (weakest) {
+      const target = reviewTargets[weakest.domain as CompetencyDomain];
       recommendedAction = {
         type: "lesson",
-        title: "Color Science, ICC Profiles, and Delta E",
-        slug: "day-07-color-science-icc-profiles-and-delta-e",
-        domain: "color_oris",
-        reason: `Your Color Science & ORIS mastery is currently at ${sortedByScore[0]?.observed_score}%. Revisit Day 7 to master CIELAB, Delta E 2000, and DeviceLink profiling.`,
+        title: target.title,
+        slug: target.lesson,
+        domain: weakest.domain,
+        reason: `Your saved practice assessments average ${Number(weakest.observed_score).toFixed(0)}% in this domain across ${weakest.total_evaluations} recorded attempt(s). This is a coaching signal, not a field-competence rating. Review the lesson and retry a related knowledge check.`,
       };
-    } else if (weakestDomain === "hardware_safety") {
-      recommendedAction = {
-        type: "scenario",
-        title: "Case #10: Unsafe Condition & Shutdown",
-        slug: "case-10-unsafe-condition-shutdown",
-        domain: "hardware_safety",
-        reason: `Hardware & Safety carries the highest priority weight (35%). Run Scenario 10 to practice OSHA LOTO and drag-chain electrical inspection.`,
-      };
-    } else if (weakestDomain === "customer_docs") {
+    } else if (nextLesson) {
       recommendedAction = {
         type: "lesson",
-        title: "Customer Support & Service Tickets",
-        slug: "day-12-customer-support-and-documentation",
-        domain: "customer_docs",
-        reason: `Customer Documentation is at ${sortedByScore[0]?.observed_score}%. Practice drafting formal Field Service Reports in Day 12.`,
+        title: `Start Day ${profile.active_track === "bootcamp" ? nextLesson.bootcamp_day_number : nextLesson.day_number}: ${nextLesson.title}`,
+        slug: nextLesson.slug,
+        domain: nextLesson.competency_domain,
+        reason: "No scored practice assessment is recorded yet. Begin with a lesson; this practice summary updates after you submit a knowledge check or interview exercise.",
       };
+    } else {
+      recommendedAction = null;
     }
 
-    // 5. Recent User Notes
-    const notesRes = await query(
-      `SELECT id, reference_type, reference_id, title, note_text, updated_at
-       FROM user_notes WHERE user_id = $1
-       ORDER BY updated_at DESC LIMIT 5;`,
-      [user.id]
-    );
+    const [notes, quizAttempts, scenarioRuns, studyStats] = await Promise.all([
+      query(
+        `SELECT id, reference_type, reference_id, title, note_text, updated_at
+           FROM user_notes WHERE user_id = $1 ORDER BY updated_at DESC LIMIT 5`,
+        [user.id],
+      ),
+      query(
+        `SELECT qa.id, qa.score, qa.total_questions, qa.passed, qa.created_at,
+                l.title AS lesson_title, l.day_number
+           FROM quiz_attempts qa
+           JOIN lessons l ON l.id = qa.lesson_id
+          WHERE qa.user_id = $1
+          ORDER BY qa.created_at DESC LIMIT 5`,
+        [user.id],
+      ),
+      query(
+        `SELECT sr.id, sr.status, sr.total_score, sr.safety_score, sr.diagnostic_score,
+                sr.completed_at, s.title, s.scenario_number
+           FROM scenario_runs sr
+           JOIN troubleshooting_scenarios s ON s.id = sr.scenario_id
+          WHERE sr.user_id = $1
+          ORDER BY sr.created_at DESC LIMIT 5`,
+        [user.id],
+      ),
+      query(
+        `SELECT COALESCE(SUM(time_spent_seconds), 0) AS study_seconds,
+                COUNT(*) FILTER (WHERE status = 'completed') AS completed_lessons,
+                (SELECT COUNT(*) FROM quiz_attempts WHERE user_id = $1) AS quiz_attempts
+           FROM lesson_progress WHERE user_id = $1`,
+        [user.id],
+      ),
+    ]);
 
-    // 6. Recent Quiz Attempts
-    const attemptsRes = await query(
-      `SELECT qa.id, qa.score, qa.total_questions, qa.passed, qa.created_at, l.title as lesson_title, l.day_number
-       FROM quiz_attempts qa
-       JOIN lessons l ON l.id = qa.lesson_id
-       WHERE qa.user_id = $1
-       ORDER BY qa.created_at DESC LIMIT 5;`,
-      [user.id]
-    );
+    const interviewDate = profile.target_interview_date
+      ? new Date(`${String(profile.target_interview_date).slice(0, 10)}T00:00:00.000Z`)
+      : null;
+    const today = new Date();
+    const todayUtc = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+    const daysRemaining = interviewDate
+      ? Math.ceil((interviewDate.getTime() - todayUtc) / 86_400_000)
+      : null;
 
     return NextResponse.json({
       profile,
@@ -142,43 +143,56 @@ export async function GET() {
       inProgressCount,
       nextLesson,
       lessons,
-      competencies,
-      weakestDomain,
+      competencies: competencyRows,
+      weakestDomain: weakest?.domain ?? null,
       recommendedAction,
-      recentNotes: notesRes.rows,
-      recentQuizAttempts: attemptsRes.rows,
+      recentNotes: notes.rows,
+      recentQuizAttempts: quizAttempts.rows,
+      recentScenarioRuns: scenarioRuns.rows,
+      studyHistory: studyStats.rows[0] ?? { study_seconds: 0, completed_lessons: 0, quiz_attempts: 0 },
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to load dashboard" }, { status: 500 });
+  } catch (error) {
+    console.error("Dashboard query failed", error);
+    return NextResponse.json({ error: "Unable to load dashboard data." }, { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
-  // Update target interview date or active track
   try {
     const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== "object") return NextResponse.json({ error: "Update details are required." }, { status: 400 });
+    const updates: string[] = [];
+    const values: unknown[] = [];
+
+    if (Object.hasOwn(body, "targetInterviewDate")) {
+      const raw = body.targetInterviewDate;
+      if (raw !== null && (typeof raw !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(raw) || Number.isNaN(Date.parse(`${raw}T00:00:00Z`)))) {
+        return NextResponse.json({ error: "Interview date must be a valid date or empty." }, { status: 400 });
+      }
+      values.push(raw || null);
+      updates.push(`target_interview_date = $${values.length}`);
     }
 
-    const { targetInterviewDate, activeTrack } = await req.json();
-
-    if (targetInterviewDate) {
-      await query(
-        `UPDATE profiles SET target_interview_date = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2;`,
-        [targetInterviewDate, user.id]
-      );
+    if (Object.hasOwn(body, "activeTrack")) {
+      if (body.activeTrack !== "course_14" && body.activeTrack !== "bootcamp") {
+        return NextResponse.json({ error: "Choose either the 14-day course or 3-day bootcamp." }, { status: 400 });
+      }
+      values.push(body.activeTrack);
+      updates.push(`active_track = $${values.length}`);
     }
 
-    if (activeTrack) {
-      await query(
-        `UPDATE profiles SET active_track = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2;`,
-        [activeTrack, user.id]
-      );
-    }
-
+    if (updates.length === 0) return NextResponse.json({ error: "No supported profile changes supplied." }, { status: 400 });
+    values.push(user.id);
+    await query(
+      `UPDATE profiles SET ${updates.join(", ")}, updated_at = CURRENT_TIMESTAMP WHERE user_id = $${values.length}`,
+      values,
+    );
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to update profile" }, { status: 500 });
+  } catch (error) {
+    console.error("Dashboard profile update failed", error);
+    return NextResponse.json({ error: "Unable to save your profile preference." }, { status: 500 });
   }
 }

@@ -80,7 +80,7 @@ export default function InterviewStudioPage() {
           Interactive Interview Preparation & Simulator
         </h1>
         <p className="text-xs text-slate-400 max-w-3xl leading-relaxed">
-          Structured 5-dimensional rubric scoring across Technical Reasoning (20%), Safety Mindset (20%), Customer Communication (20%), Verification/Documentation (20%), and Clarity (20%). Includes model answers and honest transferable skills framing.
+          Practice prompts include technical reasoning, safety, communication, verification, and clarity scaffolds. The saved score is a disclosed keyword-and-structure heuristic; it does not evaluate technical truth, verify experience, or predict hiring.
         </p>
       </div>
 

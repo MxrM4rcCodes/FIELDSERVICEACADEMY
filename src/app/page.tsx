@@ -102,6 +102,8 @@ export default function DashboardPage() {
     recommendedAction,
     recentNotes,
     recentQuizAttempts,
+    recentScenarioRuns,
+    studyHistory,
   } = data || {};
 
   const domainLabels: Record<string, { label: string; icon: any; color: string }> = {
@@ -120,13 +122,13 @@ export default function DashboardPage() {
           <div className="space-y-2 max-w-2xl">
             <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-300 text-xs font-mono">
               <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
-              <span>Plymouth MN Field Service Technician Candidate Hub</span>
+              <span>Independent technical learning</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              CGS ORIS Field Service Academy
+              Field Service Academy
             </h1>
             <p className="text-sm text-slate-300 leading-relaxed">
-              Industrial printing, high-resolution METIS material imaging, ORIS color management, OSHA safety protocols, and field service diagnostic mastery.
+              Independent study of industrial imaging workflows, color measurement, safe diagnostic reasoning, technical documentation, and customer communication.
             </p>
           </div>
 
@@ -162,7 +164,7 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="text-xs text-slate-300 font-medium">
-                  {targetInterviewDate ? new Date(targetInterviewDate).toLocaleDateString(undefined, {
+                  {targetInterviewDate ? new Date(`${String(targetInterviewDate).slice(0, 10)}T12:00:00`).toLocaleDateString(undefined, {
                     month: "short",
                     day: "numeric",
                     year: "numeric",
@@ -177,7 +179,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <div className="text-2xl font-black font-mono text-teal-300 leading-none">
-                  {daysRemaining}
+                  {daysRemaining === null ? "—" : daysRemaining}
                 </div>
                 <div className="text-[10px] uppercase font-mono tracking-wider text-slate-400">
                   Days Remaining
@@ -221,7 +223,7 @@ export default function DashboardPage() {
               href={`/lessons/${nextLesson.slug}`}
               className="inline-flex items-center justify-center space-x-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-blue-600 text-white font-semibold text-xs tracking-wide shadow-lg shadow-teal-500/25 hover:from-teal-400 hover:to-blue-500 transition-all group"
             >
-              <span>Resume Learning: Day {nextLesson.day_number}</span>
+              <span>Resume Learning: {activeTrack === "bootcamp" ? `Bootcamp Day ${nextLesson.bootcamp_day_number}` : `Day ${nextLesson.day_number}`}</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </a>
           )}
@@ -241,7 +243,7 @@ export default function DashboardPage() {
                   Adaptive Recommendation
                 </span>
                 <span className="text-slate-500">•</span>
-                <span className="text-xs text-slate-300 font-medium">Targeted Mastery Improvement</span>
+                <span className="text-xs text-slate-300 font-medium">Targeted Practice Review</span>
               </div>
               <h3 className="text-sm font-bold text-white">{recommendedAction.title}</h3>
               <p className="text-xs text-slate-300 max-w-3xl leading-relaxed">
@@ -273,7 +275,7 @@ export default function DashboardPage() {
               <div>
                 <h2 className="text-base font-bold text-white">Course Progression</h2>
                 <p className="text-xs text-slate-400">
-                  {completedCount} of {totalLessons} curriculum days completed
+                  {completedCount} of {totalLessons} lessons passed in this track
                 </p>
               </div>
               <div className="text-right">
@@ -287,14 +289,14 @@ export default function DashboardPage() {
             <div className="w-full h-3 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-800">
               <div
                 className="h-full bg-gradient-to-r from-teal-500 via-blue-500 to-emerald-400 rounded-full transition-all duration-500 shadow-sm"
-                style={{ width: `${Math.max(4, overallProgressPercent)}%` }}
+                style={{ width: `${overallProgressPercent}%` }}
               ></div>
             </div>
 
             <div className="mt-4 grid grid-cols-3 gap-4 text-center border-t border-slate-850 pt-4 text-xs">
               <div>
                 <div className="text-slate-400 text-[11px]">Completed</div>
-                <div className="text-white font-bold font-mono text-sm">{completedCount} Days</div>
+                <div className="text-white font-bold font-mono text-sm">{completedCount} Lessons</div>
               </div>
               <div>
                 <div className="text-slate-400 text-[11px]">In Progress</div>
@@ -305,7 +307,7 @@ export default function DashboardPage() {
               <div>
                 <div className="text-slate-400 text-[11px]">Remaining</div>
                 <div className="text-slate-300 font-bold font-mono text-sm">
-                  {totalLessons - completedCount} Days
+                  {totalLessons - completedCount} Lessons
                 </div>
               </div>
             </div>
@@ -384,6 +386,38 @@ export default function DashboardPage() {
                 })}
             </div>
           </div>
+
+          {/* Persisted Study History */}
+          <div className="bg-[#0F1A2E] border border-slate-800 rounded-xl p-6 shadow-md space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-bold text-white flex items-center gap-2"><Clock className="h-4 w-4 text-teal-400" /> Study History</h2>
+                <p className="text-[11px] text-slate-400">Saved activity from this account</p>
+              </div>
+              <div className="text-right font-mono">
+                <div className="text-lg font-bold text-teal-300">
+                  {Math.floor((Number(studyHistory?.study_seconds) || 0) / 3600)}h {Math.floor(((Number(studyHistory?.study_seconds) || 0) % 3600) / 60)}m
+                </div>
+                <div className="text-[10px] text-slate-500">tracked reading time</div>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2 border-y border-slate-800 py-3 text-center">
+              <div><div className="text-lg font-bold text-white">{studyHistory?.completed_lessons || 0}</div><div className="text-[10px] text-slate-500">Passed lessons</div></div>
+              <div><div className="text-lg font-bold text-white">{studyHistory?.quiz_attempts || 0}</div><div className="text-[10px] text-slate-500">Quiz attempts</div></div>
+              <div><div className="text-lg font-bold text-white">{recentScenarioRuns?.length || 0}</div><div className="text-[10px] text-slate-500">Recent scenario runs</div></div>
+            </div>
+            {recentQuizAttempts?.length ? (
+              <div className="space-y-2">
+                <h3 className="text-[10px] font-mono uppercase font-bold text-slate-400">Recent knowledge checks</h3>
+                {recentQuizAttempts.slice(0, 3).map((attempt: any) => (
+                  <a key={attempt.id} href={`/lessons/${lessons?.find((item: any) => item.day_number === attempt.day_number)?.slug || "course"}`} className="flex items-center justify-between gap-3 rounded-lg bg-slate-900/60 px-3 py-2 text-xs hover:bg-slate-800">
+                    <span className="truncate text-slate-300">Day {attempt.day_number}: {attempt.lesson_title}</span>
+                    <span className={`shrink-0 font-mono font-bold ${attempt.passed ? "text-emerald-400" : "text-amber-300"}`}>{attempt.score}/{attempt.total_questions}</span>
+                  </a>
+                ))}
+              </div>
+            ) : <p className="text-xs text-slate-500">No submitted knowledge checks yet. Reading progress is recorded as you study.</p>}
+          </div>
         </div>
 
         {/* Right Col: Competency Breakdown & Saved Notes */}
@@ -394,11 +428,12 @@ export default function DashboardPage() {
               <div>
                 <h2 className="text-base font-bold text-white flex items-center space-x-2">
                   <Award className="w-4 h-4 text-teal-400" />
-                  <span>Competency Mastery</span>
+                  <span>Practice Scores by Domain</span>
                 </h2>
                 <p className="text-[11px] text-slate-400">
-                  Observed Mastery vs Curricular Weights
+                  Saved assessment averages; not a field qualification
                 </p>
+                <p className="text-[10px] text-slate-500">Course focus weights describe curriculum emphasis, not learner ratings.</p>
               </div>
             </div>
 
@@ -410,7 +445,8 @@ export default function DashboardPage() {
                   color: "teal",
                 };
                 const Icon = info.icon;
-                const score = parseFloat(comp.observed_score);
+                const hasEvidence = Number(comp.total_evaluations) > 0;
+                const score = hasEvidence ? parseFloat(comp.observed_score) : 0;
                 const weight = parseFloat(comp.weight_percentage);
 
                 return (
@@ -422,9 +458,9 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex items-center space-x-2 font-mono">
                         <span className="text-[10px] text-slate-500 font-normal">
-                          wt: {weight}%
+                          course focus: {weight}%
                         </span>
-                        <span className="text-white font-bold">{score}%</span>
+                        <span className="text-white font-bold">{hasEvidence ? `${score}%` : "Not assessed"}</span>
                       </div>
                     </div>
 
@@ -438,7 +474,7 @@ export default function DashboardPage() {
                             ? "bg-teal-500"
                             : "bg-amber-500"
                         }`}
-                        style={{ width: `${Math.max(6, score)}%` }}
+                        style={{ width: `${hasEvidence ? score : 0}%` }}
                       ></div>
                     </div>
                   </div>
@@ -447,9 +483,9 @@ export default function DashboardPage() {
             </div>
 
             <div className="mt-4 pt-3 border-t border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
-              <span>Weakest Domain:</span>
+              <span>Lowest recorded practice score:</span>
               <span className="font-mono text-amber-400 uppercase font-semibold">
-                {weakestDomain?.replace("_", " ")}
+                {weakestDomain ? weakestDomain.replaceAll("_", " ") : "Awaiting assessment"}
               </span>
             </div>
           </div>
