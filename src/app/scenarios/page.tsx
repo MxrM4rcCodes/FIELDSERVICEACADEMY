@@ -44,10 +44,10 @@ export default function ScenariosIndexPage() {
             <span>Branching Diagnostic Simulator</span>
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight mt-1">
-            All 10 Real-World Service Cases
+            10 Simulated Practice Cases
           </h1>
           <p className="text-xs text-slate-400 max-w-2xl">
-            Real multi-branch diagnostic scenarios. Hidden root causes, non-destructive test selection, safety assessments, and formal field service documentation.
+            Synthetic branching exercises for safe diagnostic reasoning. Cases are simplified learning models, not service procedures or records of real customer events.
           </p>
         </div>
 

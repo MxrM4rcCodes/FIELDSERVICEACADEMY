@@ -82,7 +82,7 @@ export default function ScenarioRunnerPage() {
     return (
       <div className="py-24 text-center text-slate-400 font-mono text-sm">
         <RefreshCw className="w-8 h-8 animate-spin mx-auto text-teal-400 mb-2" />
-        Loading Diagnostic Simulator Environment...
+        Loading simulated practice case...
       </div>
     );
   }
@@ -91,7 +91,8 @@ export default function ScenarioRunnerPage() {
 
   const isTerminal = currentNode?.is_terminal || false;
   const isSuccess = currentNode?.node_type === "terminal_success";
-  const isSafetyTrip = currentNode?.is_hazardous || currentNode?.node_type === "terminal_fail";
+  const isSafetyTrip = Boolean(currentNode?.is_hazardous);
+  const isFailure = isTerminal && !isSuccess && !isSafetyTrip;
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -111,7 +112,7 @@ export default function ScenarioRunnerPage() {
         {/* Score Ticker */}
         <div className="flex items-center space-x-3 bg-slate-900 border border-slate-800 px-3.5 py-2 rounded-xl text-xs font-mono">
           <div>
-            <div className="text-[10px] text-slate-400">Total Score</div>
+            <div className="text-[10px] text-slate-400">Practice Points</div>
             <div className="text-sm font-bold text-teal-300">{run?.totalScore || 0} pts</div>
           </div>
           <div className="border-l border-slate-800 pl-3">
@@ -132,6 +133,10 @@ export default function ScenarioRunnerPage() {
         </div>
       </div>
 
+      <div className="rounded-lg border border-amber-700/40 bg-amber-950/20 p-3 text-xs leading-relaxed text-amber-200">
+        <strong>Simulated practice only.</strong> These cases are simplified educational models, not real customer events, equipment-specific procedures, or authorization to service a device. Follow current manufacturer documentation and site safety procedures.
+      </div>
+
       {/* Case Context Panel */}
       <div className="bg-[#0F1A2E] border border-slate-800 rounded-xl p-5 space-y-3 text-xs">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -145,7 +150,7 @@ export default function ScenarioRunnerPage() {
           </div>
           <div className="space-y-1">
             <span className="text-[10px] font-mono text-slate-400 uppercase font-bold">
-              Equipment Profile
+              Scenario Scope
             </span>
             <p className="text-slate-300 leading-relaxed font-mono text-[11px]">
               {scenario?.equipmentContext}
@@ -191,6 +196,8 @@ export default function ScenarioRunnerPage() {
               <CheckCircle2 className="w-5 h-5 text-emerald-400" />
             ) : isSafetyTrip ? (
               <ShieldAlert className="w-5 h-5 text-rose-400" />
+            ) : isFailure ? (
+              <AlertTriangle className="w-5 h-5 text-amber-400" />
             ) : (
               <Wrench className="w-5 h-5 text-teal-400" />
             )}
@@ -205,7 +212,7 @@ export default function ScenarioRunnerPage() {
         {!isTerminal && choices && choices.length > 0 && (
           <div className="space-y-3 pt-2">
             <div className="text-[11px] font-mono text-slate-400 uppercase tracking-wider font-semibold">
-              Select Your Authorized Action or Test:
+              Choose a response for this simulated case:
             </div>
             {choices.map((choice: any) => (
               <button
@@ -226,8 +233,8 @@ export default function ScenarioRunnerPage() {
         {/* Terminal Success Actions */}
         {isSuccess && (
           <div className="pt-4 border-t border-emerald-800/40 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-xs text-emerald-300 font-mono">
-              ★ Case Completed! Verification Criteria Satisfied.
+              <div className="text-xs text-emerald-300 font-mono">
+              ★ Practice case completed. Review the learning feedback; no real service outcome is implied.
             </div>
             <div className="flex items-center space-x-3 w-full sm:w-auto">
               <button
@@ -241,21 +248,23 @@ export default function ScenarioRunnerPage() {
                 className="px-4 py-2 rounded-lg bg-teal-500 hover:bg-teal-400 text-[#070C14] font-bold text-xs flex items-center space-x-1.5 shadow-md"
               >
                 <FileText className="w-4 h-4" />
-                <span>Generate Official Service Ticket</span>
+                <span>Open Training Service Record</span>
               </a>
             </div>
           </div>
         )}
 
         {/* Terminal Failure Actions */}
-        {isSafetyTrip && (
-          <div className="pt-4 border-t border-rose-800/40 flex items-center justify-between">
-            <div className="text-xs text-rose-300 font-mono">
-              ⚠️ Diagnostic Intervention Terminated. Review Root Cause.
+        {isTerminal && !isSuccess && (
+          <div className={`pt-4 border-t flex items-center justify-between ${isSafetyTrip ? "border-rose-800/40" : "border-amber-800/40"}`}>
+            <div className={`text-xs font-mono ${isSafetyTrip ? "text-rose-300" : "text-amber-300"}`}>
+              {isSafetyTrip
+                ? "⚠️ Safety path stopped. Keep the boundary in place and follow site escalation."
+                : "Review the reasoning feedback and restart the simulated case if you want another attempt."}
             </div>
             <button
               onClick={handleRestart}
-              className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs"
+              className={`px-4 py-2 rounded-lg text-white font-bold text-xs ${isSafetyTrip ? "bg-rose-600 hover:bg-rose-500" : "bg-amber-600 hover:bg-amber-500"}`}
             >
               Restart Simulation
             </button>

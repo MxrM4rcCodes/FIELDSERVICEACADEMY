@@ -1,28 +1,33 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+import { deltaE00, deltaE76 } from "../src/lib/color";
 
-describe("Color Science & Delta E Algorithms", () => {
-  it("should calculate exact Delta E 76 Euclidean distance", () => {
-    const L1 = 50.0, a1 = 60.0, b1 = 40.0;
-    const L2 = 53.0, a2 = 64.0, b2 = 40.0;
-    // dL = 3, da = 4, db = 0 => sqrt(9 + 16 + 0) = 5.0
-    const dL = L2 - L1;
-    const da = a2 - a1;
-    const db = b2 - b1;
-    const deltaE76 = Math.sqrt(dL * dL + da * da + db * db);
-    expect(deltaE76).toBe(5.0);
+describe("CIE Lab color-difference calculations", () => {
+  it("calculates CIE 1976 Euclidean distance", () => {
+    expect(deltaE76({ L: 50, a: 60, b: 40 }, { L: 53, a: 64, b: 40 })).toBe(5);
   });
 
-  it("should evaluate Delta E within commercial tolerance thresholds", () => {
-    const evaluateTolerance = (de: number) => {
-      if (de <= 1.0) return "imperceptible";
-      if (de <= 2.0) return "commercial_pass";
-      if (de <= 3.5) return "marginal";
-      return "unacceptable";
-    };
+  it("matches published CIEDE2000 test data", () => {
+    // Sharma, Wu & Dalal (2005), supplementary CIEDE2000 test pairs.
+    const pairs: Array<[number[], number[], number]> = [
+      [[50, 2.6772, -79.7751], [50, 0, -82.7485], 2.0425],
+      [[50, 3.1571, -77.2803], [50, 0, -82.7485], 2.8615],
+      [[50, 2.8361, -74.0200], [50, 0, -82.7485], 3.4412],
+      [[50, -1.3802, -84.2814], [50, 0, -82.7485], 1.0000],
+      [[50, -1.1848, -84.8006], [50, 0, -82.7485], 1.0000],
+      [[50, -0.9009, -85.5211], [50, 0, -82.7485], 1.0000],
+      [[50, 0, 0], [50, -1, 2], 2.3669],
+    ];
 
-    expect(evaluateTolerance(0.65)).toBe("imperceptible");
-    expect(evaluateTolerance(1.42)).toBe("commercial_pass");
-    expect(evaluateTolerance(2.80)).toBe("marginal");
-    expect(evaluateTolerance(6.20)).toBe("unacceptable");
+    for (const [first, second, expected] of pairs) {
+      const actual = deltaE00(
+        { L: first[0], a: first[1], b: first[2] },
+        { L: second[0], a: second[1], b: second[2] },
+      );
+      expect(actual).toBeCloseTo(expected, 4);
+    }
+  });
+
+  it("returns no misleading pass/fail rating and rejects non-finite inputs", () => {
+    expect(Number.isNaN(deltaE00({ L: Number.NaN, a: 0, b: 0 }, { L: 50, a: 0, b: 0 }))).toBe(true);
   });
 });

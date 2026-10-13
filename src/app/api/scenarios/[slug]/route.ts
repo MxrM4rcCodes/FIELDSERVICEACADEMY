@@ -1,84 +1,82 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { query } from "@/lib/db";
+import { query, withTransaction } from "@/lib/db";
 
 export async function GET(
   req: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> },
 ) {
   try {
     const user = await getCurrentUser();
-    const userId = user?.id || "usr_learner_01";
-    const { slug } = params;
+    if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    const { slug } = await params;
 
-    // 1. Fetch scenario
-    const scnRes = await query(
+    const scenarioResult = await query(
       `SELECT id, scenario_number, title, slug, category, difficulty,
               customer_complaint, equipment_context, recent_changes,
-              hidden_root_cause, initial_node_key, verification_criteria
-       FROM troubleshooting_scenarios WHERE slug = $1;`,
-      [slug]
+              initial_node_key, verification_criteria
+         FROM troubleshooting_scenarios WHERE slug = $1`,
+      [slug],
     );
+    const scenario = scenarioResult.rows[0];
+    if (!scenario) return NextResponse.json({ error: "Scenario not found" }, { status: 404 });
 
-    if (scnRes.rows.length === 0) {
-      return NextResponse.json({ error: "Scenario not found" }, { status: 404 });
-    }
-    const scenario = scnRes.rows[0];
-
-    // 2. Fetch or create active run
-    let activeRunRes = await query(
+    let activeRunResult = await query(
       `SELECT id, current_node_key, status, total_score, safety_score, diagnostic_score, service_ticket_id
-       FROM scenario_runs
-       WHERE user_id = $1 AND scenario_id = $2 AND status = 'in_progress'
-       ORDER BY created_at DESC LIMIT 1;`,
-      [userId, scenario.id]
+         FROM scenario_runs
+        WHERE user_id = $1 AND scenario_id = $2
+        ORDER BY created_at DESC LIMIT 1`,
+      [user.id, scenario.id],
     );
+    let run = activeRunResult.rows[0];
 
-    let run = activeRunRes.rows[0];
-    if (!run) {
-      const runId = `run_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      await query(
-        `INSERT INTO scenario_runs (id, user_id, scenario_id, status, current_node_key, total_score, safety_score, diagnostic_score)
-         VALUES ($1, $2, $3, 'in_progress', $4, 0, 0, 0);`,
-        [runId, userId, scenario.id, scenario.initial_node_key]
+    // Keep terminal feedback visible until the learner explicitly restarts.
+    // A content-revision-abandoned run cannot be resumed, so make a fresh one.
+    if (!run || run.status === "abandoned") {
+      const runId = crypto.randomUUID();
+      const created = await query(
+        `INSERT INTO scenario_runs
+           (id, user_id, scenario_id, status, current_node_key, total_score, safety_score, diagnostic_score)
+         VALUES ($1, $2, $3, 'in_progress', $4, 0, 0, 0)
+         ON CONFLICT DO NOTHING
+         RETURNING id, current_node_key, status, total_score, safety_score, diagnostic_score, service_ticket_id`,
+        [runId, user.id, scenario.id, scenario.initial_node_key],
       );
-      run = {
-        id: runId,
-        current_node_key: scenario.initial_node_key,
-        status: "in_progress",
-        total_score: 0,
-        safety_score: 0,
-        diagnostic_score: 0,
-        service_ticket_id: null,
-      };
+      run = created.rows[0];
+      if (!run) {
+        activeRunResult = await query(
+          `SELECT id, current_node_key, status, total_score, safety_score, diagnostic_score, service_ticket_id
+             FROM scenario_runs
+            WHERE user_id = $1 AND scenario_id = $2 AND status = 'in_progress'
+            ORDER BY created_at DESC LIMIT 1`,
+          [user.id, scenario.id],
+        );
+        run = activeRunResult.rows[0];
+      }
+      if (!run) throw new Error("Could not create or load the active scenario run.");
     }
 
-    // 3. Fetch current node
-    const nodeRes = await query(
+    const nodeResult = await query(
       `SELECT id, node_key, title, description, node_type, is_terminal, is_hazardous
-       FROM scenario_nodes WHERE scenario_id = $1 AND node_key = $2;`,
-      [scenario.id, run.current_node_key]
+         FROM scenario_nodes WHERE scenario_id = $1 AND node_key = $2`,
+      [scenario.id, run.current_node_key],
     );
-    const currentNode = nodeRes.rows[0];
+    const currentNode = nodeResult.rows[0];
+    if (!currentNode) return NextResponse.json({ error: "Current scenario node not found" }, { status: 409 });
 
-    // 4. Fetch available choices for this node
-    let choices: any[] = [];
-    if (currentNode && !currentNode.is_terminal) {
-      const choiceRes = await query(
-        `SELECT id, choice_key, text, target_node_key, sort_order
-         FROM scenario_choices WHERE node_id = $1
-         ORDER BY sort_order ASC;`,
-        [currentNode.id]
-      );
-      choices = choiceRes.rows;
-    }
-
-    // 5. Fetch event history for this run
-    const eventsRes = await query(
+    const choiceResult = currentNode.is_terminal
+      ? { rows: [] }
+      : await query(
+          `SELECT id, choice_key, text, target_node_key, sort_order
+             FROM scenario_choices WHERE node_id = $1
+            ORDER BY sort_order ASC`,
+          [currentNode.id],
+        );
+    const eventsResult = await query(
       `SELECT node_key, choice_key, choice_text, feedback, revealed_evidence, points_delta, created_at
-       FROM scenario_events WHERE run_id = $1
-       ORDER BY created_at ASC;`,
-      [run.id]
+         FROM scenario_events WHERE run_id = $1
+        ORDER BY created_at ASC`,
+      [run.id],
     );
 
     return NextResponse.json({
@@ -104,41 +102,62 @@ export async function GET(
         serviceTicketId: run.service_ticket_id,
       },
       currentNode,
-      choices,
-      events: eventsRes.rows,
+      choices: choiceResult.rows,
+      events: eventsResult.rows,
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to load scenario" }, { status: 500 });
+  } catch (error) {
+    console.error("Scenario load failed", error);
+    return NextResponse.json({ error: "Unable to load this scenario." }, { status: 500 });
   }
 }
 
 export async function POST(
   req: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> },
 ) {
-  // Reset / restart scenario run
+  // Restart an exercise. The previous run is retained as abandoned history;
+  // it is not scored as a failed diagnosis.
   try {
     const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    const { slug } = params;
+    if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    const { slug } = await params;
 
-    const scnRes = await query("SELECT id, initial_node_key FROM troubleshooting_scenarios WHERE slug = $1;", [slug]);
-    if (scnRes.rows.length === 0) {
-      return NextResponse.json({ error: "Scenario not found" }, { status: 404 });
-    }
-    const scenario = scnRes.rows[0];
-
-    const runId = `run_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-    await query(
-      `INSERT INTO scenario_runs (id, user_id, scenario_id, status, current_node_key, total_score, safety_score, diagnostic_score)
-       VALUES ($1, $2, $3, 'in_progress', $4, 0, 0, 0);`,
-      [runId, user.id, scenario.id, scenario.initial_node_key]
+    const scenarioResult = await query<{ id: string; initial_node_key: string }>(
+      "SELECT id, initial_node_key FROM troubleshooting_scenarios WHERE slug = $1",
+      [slug],
     );
+    const scenario = scenarioResult.rows[0];
+    if (!scenario) return NextResponse.json({ error: "Scenario not found" }, { status: 404 });
 
-    return NextResponse.json({ success: true, runId });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to reset scenario" }, { status: 500 });
+    const run = await withTransaction(async (tx) => {
+      await tx.query(
+        `UPDATE scenario_runs
+            SET status = 'abandoned', completed_at = CURRENT_TIMESTAMP
+          WHERE user_id = $1 AND scenario_id = $2 AND status = 'in_progress'`,
+        [user.id, scenario.id],
+      );
+      const inserted = await tx.query<{ id: string }>(
+        `INSERT INTO scenario_runs
+           (id, user_id, scenario_id, status, current_node_key, total_score, safety_score, diagnostic_score)
+         VALUES ($1, $2, $3, 'in_progress', $4, 0, 0, 0)
+         ON CONFLICT DO NOTHING
+         RETURNING id`,
+        [crypto.randomUUID(), user.id, scenario.id, scenario.initial_node_key],
+      );
+      if (inserted.rows[0]) return inserted.rows[0];
+      const active = await tx.query<{ id: string }>(
+        `SELECT id FROM scenario_runs
+          WHERE user_id = $1 AND scenario_id = $2 AND status = 'in_progress'
+          ORDER BY created_at DESC LIMIT 1`,
+        [user.id, scenario.id],
+      );
+      if (!active.rows[0]) throw new Error("Could not restart the scenario run.");
+      return active.rows[0];
+    });
+
+    return NextResponse.json({ success: true, runId: run.id });
+  } catch (error) {
+    console.error("Scenario restart failed", error);
+    return NextResponse.json({ error: "Unable to restart this scenario." }, { status: 500 });
   }
 }

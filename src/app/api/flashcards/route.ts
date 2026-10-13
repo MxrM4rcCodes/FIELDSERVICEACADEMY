@@ -7,7 +7,8 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const user = await getCurrentUser();
-    const userId = user?.id || "usr_learner_01";
+    if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    const userId = user.id;
     const { searchParams } = new URL(req.url);
     const category = searchParams.get("category");
     const queryTerm = searchParams.get("q");

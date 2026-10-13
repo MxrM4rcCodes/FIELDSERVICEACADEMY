@@ -1,110 +1,76 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { query } from "@/lib/db";
+import { parseServiceTicket } from "@/lib/service-ticket";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
     const user = await getCurrentUser();
-    const userId = user?.id || "usr_learner_01";
+    if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
 
-    const res = await query(
+    const tickets = await query(
       `SELECT id, ticket_number, customer_name, equipment_model, serial_number,
               customer_complaint, safety_assessment, configuration_notes,
               diagnostic_tests_performed, observations, actions_taken,
               verification_results, customer_communication, escalation_follow_up,
               status, created_at, updated_at
-       FROM service_tickets
-       WHERE user_id = $1
-       ORDER BY created_at DESC;`,
-      [userId]
+         FROM service_tickets
+        WHERE user_id = $1
+        ORDER BY created_at DESC`,
+      [user.id],
     );
-
-    return NextResponse.json({ tickets: res.rows });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to load tickets" }, { status: 500 });
+    return NextResponse.json({ tickets: tickets.rows });
+  } catch (error) {
+    console.error("Service ticket list failed", error);
+    return NextResponse.json({ error: "Unable to load your service tickets." }, { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
 
-    const body = await req.json();
-    const {
-      customerName,
-      equipmentModel,
-      serialNumber,
-      customerComplaint,
-      safetyAssessment,
-      configurationNotes,
-      diagnosticTestsPerformed,
-      observations,
-      actionsTaken,
-      verificationResults,
-      customerCommunication,
-      escalationFollowUp,
-      status,
-    } = body;
+    const body = await req.json().catch(() => null);
+    const parsed = parseServiceTicket(body);
+    if (!parsed.data) return NextResponse.json({ error: parsed.error }, { status: 400 });
+    const ticket = parsed.data;
+    const id = crypto.randomUUID();
+    const ticketNumber = `TRAINING-${new Date().getUTCFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
 
-    if (!customerName || !equipmentModel || !customerComplaint || !actionsTaken) {
-      return NextResponse.json({ error: "Customer name, equipment model, complaint, and actions taken are required." }, { status: 400 });
-    }
-
-    const ticketNumber = `FSR-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
-    const ticketId = `tkt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-
-    await query(
+    const saved = await query(
       `INSERT INTO service_tickets (
-        id, user_id, ticket_number, customer_name, equipment_model, serial_number,
-        customer_complaint, safety_assessment, configuration_notes,
-        diagnostic_tests_performed, observations, actions_taken,
-        verification_results, customer_communication, escalation_follow_up, status
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
-      );`,
+         id, user_id, ticket_number, customer_name, equipment_model, serial_number,
+         customer_complaint, safety_assessment, configuration_notes,
+         diagnostic_tests_performed, observations, actions_taken,
+         verification_results, customer_communication, escalation_follow_up, status
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+       RETURNING id, ticket_number, customer_name, equipment_model, status, created_at`,
       [
-        ticketId,
+        id,
         user.id,
         ticketNumber,
-        customerName,
-        equipmentModel,
-        serialNumber || "N/A",
-        customerComplaint,
-        safetyAssessment || "LOTO verified; PPE utilized.",
-        configurationNotes || "",
-        diagnosticTestsPerformed || "Standard nozzle check, electrical ground test.",
-        observations || "Symptoms observed and measured.",
-        actionsTaken,
-        verificationResults || "Test print executed and customer signoff obtained.",
-        customerCommunication || "Operator trained on preventive maintenance.",
-        escalationFollowUp || "None required.",
-        status || "completed",
-      ]
+        ticket.customerName,
+        ticket.equipmentModel,
+        ticket.serialNumber || "Not provided",
+        ticket.customerComplaint,
+        ticket.safetyAssessment,
+        ticket.configurationNotes,
+        ticket.diagnosticTestsPerformed,
+        ticket.observations,
+        ticket.actionsTaken,
+        ticket.verificationResults,
+        ticket.customerCommunication,
+        ticket.escalationFollowUp,
+        ticket.status,
+      ],
     );
 
-    // Boost customer_docs competency score
-    await query(
-      `UPDATE competency_scores 
-       SET observed_score = LEAST(100.0, observed_score + 6.0),
-           total_evaluations = total_evaluations + 1,
-           updated_at = CURRENT_TIMESTAMP
-       WHERE user_id = $1 AND domain = 'customer_docs';`,
-      [user.id]
-    );
-
-    return NextResponse.json({
-      success: true,
-      ticket: {
-        id: ticketId,
-        ticketNumber,
-      },
-    });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to create service ticket" }, { status: 500 });
+    return NextResponse.json({ success: true, ticket: saved.rows[0] }, { status: 201 });
+  } catch (error) {
+    console.error("Service ticket creation failed", error);
+    return NextResponse.json({ error: "Unable to save this service ticket." }, { status: 500 });
   }
 }

@@ -1,21 +1,34 @@
 -- CGS ORIS FIELD SERVICE ACADEMY
 -- PostgreSQL Relational Schema
 
+CREATE TABLE IF NOT EXISTS roles (
+  name TEXT PRIMARY KEY,
+  description TEXT NOT NULL
+);
+
+INSERT INTO roles (name, description) VALUES
+  ('learner', 'Standard learner account'),
+  ('admin', 'Authorized content administrator')
+ON CONFLICT (name) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
   full_name TEXT NOT NULL,
-  role TEXT NOT NULL DEFAULT 'learner', -- 'admin' or 'learner'
+  role TEXT NOT NULL DEFAULT 'learner' REFERENCES roles(name),
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower ON users (LOWER(email));
 
 CREATE TABLE IF NOT EXISTS profiles (
   id TEXT PRIMARY KEY,
   user_id TEXT UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   target_interview_date DATE,
-  active_track TEXT NOT NULL DEFAULT 'course_14', -- 'bootcamp' or 'course_14'
+  active_track TEXT NOT NULL DEFAULT 'course_14' CHECK (active_track IN ('bootcamp', 'course_14')),
   notes TEXT,
   experience_level TEXT DEFAULT 'entry_field_service',
   avatar_url TEXT,
@@ -78,7 +91,7 @@ CREATE TABLE IF NOT EXISTS lesson_progress (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   lesson_id TEXT NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
-  status TEXT NOT NULL DEFAULT 'not_started', -- 'not_started', 'in_progress', 'completed'
+  status TEXT NOT NULL DEFAULT 'not_started' CHECK (status IN ('not_started', 'in_progress', 'completed')),
   time_spent_seconds INT NOT NULL DEFAULT 0,
   completed_at TIMESTAMP WITH TIME ZONE,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -107,8 +120,8 @@ CREATE TABLE IF NOT EXISTS quiz_attempts (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   lesson_id TEXT NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
-  score INT NOT NULL,
-  total_questions INT NOT NULL,
+  score INT NOT NULL CHECK (score >= 0),
+  total_questions INT NOT NULL CHECK (total_questions > 0),
   passed BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -118,7 +131,8 @@ CREATE TABLE IF NOT EXISTS quiz_answers (
   attempt_id TEXT NOT NULL REFERENCES quiz_attempts(id) ON DELETE CASCADE,
   question_id TEXT NOT NULL REFERENCES quiz_questions(id) ON DELETE CASCADE,
   selected_option_id TEXT NOT NULL REFERENCES quiz_options(id) ON DELETE CASCADE,
-  is_correct BOOLEAN NOT NULL
+  is_correct BOOLEAN NOT NULL,
+  UNIQUE (attempt_id, question_id)
 );
 
 CREATE TABLE IF NOT EXISTS troubleshooting_scenarios (
@@ -178,7 +192,7 @@ CREATE TABLE IF NOT EXISTS service_tickets (
   verification_results TEXT NOT NULL,
   customer_communication TEXT NOT NULL,
   escalation_follow_up TEXT,
-  status TEXT NOT NULL DEFAULT 'completed', -- 'open', 'pending_parts', 'escalated', 'completed'
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'pending_parts', 'escalated', 'completed')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -187,7 +201,7 @@ CREATE TABLE IF NOT EXISTS scenario_runs (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   scenario_id TEXT NOT NULL REFERENCES troubleshooting_scenarios(id) ON DELETE CASCADE,
-  status TEXT NOT NULL DEFAULT 'in_progress', -- 'in_progress', 'completed_success', 'failed_safety', 'failed_wrong_fix'
+  status TEXT NOT NULL DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'completed_success', 'failed_safety', 'failed_wrong_fix', 'abandoned')),
   total_score INT NOT NULL DEFAULT 0,
   safety_score INT NOT NULL DEFAULT 0,
   diagnostic_score INT NOT NULL DEFAULT 0,
@@ -225,7 +239,7 @@ CREATE TABLE IF NOT EXISTS flashcard_mastery (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   flashcard_id TEXT NOT NULL REFERENCES flashcards(id) ON DELETE CASCADE,
-  mastery_level INT NOT NULL DEFAULT 0, -- 0 to 5 (Leitner system)
+  mastery_level INT NOT NULL DEFAULT 0 CHECK (mastery_level BETWEEN 0 AND 5),
   review_count INT NOT NULL DEFAULT 0,
   correct_count INT NOT NULL DEFAULT 0,
   next_review_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -237,8 +251,8 @@ CREATE TABLE IF NOT EXISTS competency_scores (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   domain TEXT NOT NULL, -- 'hardware_safety', 'color_oris', 'metis_scanning', 'customer_docs', 'company_interview'
-  observed_score NUMERIC(5,2) NOT NULL DEFAULT 0.00,
-  weight_percentage NUMERIC(5,2) NOT NULL, -- 35%, 25%, 15%, 15%, 10%
+  observed_score NUMERIC(5,2) NOT NULL DEFAULT 0.00 CHECK (observed_score BETWEEN 0 AND 100),
+  weight_percentage NUMERIC(5,2) NOT NULL CHECK (weight_percentage BETWEEN 0 AND 100),
   total_evaluations INT NOT NULL DEFAULT 0,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(user_id, domain)
@@ -281,6 +295,16 @@ CREATE TABLE IF NOT EXISTS interview_attempts (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS practice_attempts (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  activity_slug TEXT NOT NULL,
+  prompt_index INT NOT NULL CHECK (prompt_index BETWEEN 0 AND 4),
+  choice_key TEXT NOT NULL CHECK (choice_key IN ('verify', 'guess', 'assume')),
+  is_correct BOOLEAN NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS source_references (
   id TEXT PRIMARY KEY,
   lesson_id TEXT REFERENCES lessons(id) ON DELETE SET NULL,
@@ -305,11 +329,21 @@ CREATE TABLE IF NOT EXISTS app_settings (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Indexes for performance and isolation
+-- Indexes for performance and user-scoped queries
+CREATE INDEX IF NOT EXISTS idx_lessons_day ON lessons(day_number);
+CREATE INDEX IF NOT EXISTS idx_blocks_lesson_order ON lesson_content_blocks(lesson_id, sort_order);
+CREATE INDEX IF NOT EXISTS idx_quiz_questions_lesson_order ON quiz_questions(lesson_id, sort_order);
+CREATE INDEX IF NOT EXISTS idx_quiz_options_question_order ON quiz_options(question_id, sort_order);
+CREATE INDEX IF NOT EXISTS idx_scenario_nodes_scenario_key ON scenario_nodes(scenario_id, node_key);
+CREATE INDEX IF NOT EXISTS idx_scenario_choices_node_order ON scenario_choices(node_id, sort_order);
+CREATE INDEX IF NOT EXISTS idx_scenario_events_run_created ON scenario_events(run_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_flashcards_category_order ON flashcards(category, sort_order);
+CREATE INDEX IF NOT EXISTS idx_content_revisions_entity ON content_revisions(entity_type, entity_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_lesson_progress_user ON lesson_progress(user_id);
 CREATE INDEX IF NOT EXISTS idx_quiz_attempts_user ON quiz_attempts(user_id);
 CREATE INDEX IF NOT EXISTS idx_scenario_runs_user ON scenario_runs(user_id);
 CREATE INDEX IF NOT EXISTS idx_flashcard_mastery_user ON flashcard_mastery(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_notes_user ON user_notes(user_id);
 CREATE INDEX IF NOT EXISTS idx_interview_attempts_user ON interview_attempts(user_id);
+CREATE INDEX IF NOT EXISTS idx_practice_attempts_user_activity ON practice_attempts(user_id, activity_slug, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_service_tickets_user ON service_tickets(user_id);

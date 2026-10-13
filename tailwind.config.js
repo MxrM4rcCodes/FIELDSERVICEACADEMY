@@ -1,6 +1,4 @@
-import type { Config } from "tailwindcss";
-
-const config: Config = {
+module.exports = {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -9,6 +7,10 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        slate: {
+          750: "#293548",
+          850: "#182438",
+        },
         industrial: {
           950: "#070c14",
           900: "#0b1320",
@@ -70,4 +72,3 @@ const config: Config = {
   },
   plugins: [],
 };
-export default config;

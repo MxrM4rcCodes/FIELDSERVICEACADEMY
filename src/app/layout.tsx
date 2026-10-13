@@ -4,9 +4,9 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "CGS ORIS Field Service Academy | Learn Systems, Diagnose Faults, Master Workflow",
+  title: "Field Service Academy | Independent Technical Learning & Interview Practice",
   description:
-    "Full-stack interactive technical training and interview preparation platform for CGS ORIS Americas Field Service Technicians. Industrial printing, METIS scanning, ORIS color management, safety, and diagnostics.",
+    "Independent database-backed learning and interview practice for industrial printing, imaging, color workflows, safe diagnostic reasoning, and customer service. Not affiliated with or endorsed by CGS ORIS, METIS, or Platinum Technologies.",
 };
 
 export default function RootLayout({

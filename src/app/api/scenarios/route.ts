@@ -7,7 +7,8 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const user = await getCurrentUser();
-    const userId = user?.id || "usr_learner_01";
+    if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    const userId = user.id;
 
     const res = await query(
       `SELECT s.id, s.scenario_number, s.title, s.slug, s.category, s.difficulty,

@@ -4,12 +4,13 @@ import { query } from "@/lib/db";
 
 export async function GET(
   req: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> },
 ) {
   try {
     const user = await getCurrentUser();
-    const userId = user?.id || "usr_learner_01";
-    const { slug } = params;
+    if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    const userId = user.id;
+    const { slug } = await params;
 
     // 1. Fetch lesson
     const lessonRes = await query(
@@ -42,7 +43,7 @@ export async function GET(
 
     // 4. Fetch quiz questions & options
     const questionsRes = await query(
-      `SELECT id, question_text, competency_domain, explanation, sort_order
+      `SELECT id, question_text, competency_domain, sort_order
        FROM quiz_questions WHERE lesson_id = $1
        ORDER BY sort_order ASC;`,
       [lesson.id]
@@ -51,7 +52,7 @@ export async function GET(
     const questionsWithOptions = await Promise.all(
       questionsRes.rows.map(async (q) => {
         const optRes = await query(
-          `SELECT id, option_text, is_correct, explanation, sort_order
+          `SELECT id, option_text, sort_order
            FROM quiz_options WHERE question_id = $1
            ORDER BY sort_order ASC;`,
           [q.id]

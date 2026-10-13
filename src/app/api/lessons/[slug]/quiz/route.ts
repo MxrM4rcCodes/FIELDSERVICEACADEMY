@@ -1,150 +1,168 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { query } from "@/lib/db";
+import { query, withTransaction } from "@/lib/db";
+import { recalculateCompetency, type CompetencyDomain } from "@/lib/competency";
+
+interface QuizOptionRow {
+  id: string;
+  question_id: string;
+  option_text: string;
+  is_correct: boolean;
+  explanation: string;
+  sort_order: number;
+}
 
 export async function POST(
   req: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> },
 ) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+
+    const { slug } = await params;
+    const body = await req.json().catch(() => null);
+    const answers = body?.answers;
+    if (!answers || typeof answers !== "object" || Array.isArray(answers)) {
+      return NextResponse.json({ error: "An answers object is required." }, { status: 400 });
     }
 
-    const { slug } = params;
-    const { answers } = await req.json(); // { [questionId: string]: string (selectedOptionId) }
+    const lessonResult = await query<{
+      id: string;
+      competency_domain: string;
+      title: string;
+    }>("SELECT id, competency_domain, title FROM lessons WHERE slug = $1", [slug]);
+    const lesson = lessonResult.rows[0];
+    if (!lesson) return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
 
-    if (!answers || typeof answers !== "object") {
-      return NextResponse.json({ error: "Answers object required" }, { status: 400 });
-    }
-
-    // 1. Get lesson
-    const lessonRes = await query("SELECT id, competency_domain, title FROM lessons WHERE slug = $1;", [slug]);
-    if (lessonRes.rows.length === 0) {
-      return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
-    }
-    const lesson = lessonRes.rows[0];
-
-    // 2. Fetch all questions and options for this lesson
-    const questionsRes = await query(
-      `SELECT id, question_text, explanation FROM quiz_questions WHERE lesson_id = $1;`,
-      [lesson.id]
+    const questionResult = await query<{
+      id: string;
+      question_text: string;
+      explanation: string;
+      sort_order: number;
+    }>(
+      `SELECT id, question_text, explanation, sort_order
+         FROM quiz_questions
+        WHERE lesson_id = $1
+        ORDER BY sort_order`,
+      [lesson.id],
     );
+    const questions = questionResult.rows;
+    if (questions.length < 5) {
+      return NextResponse.json({ error: "This lesson's assessment is not ready." }, { status: 409 });
+    }
 
-    let totalScore = 0;
-    const totalQuestions = questionsRes.rows.length;
-    const evaluatedAnswers: any[] = [];
-    const missedTopics: string[] = [];
+    const answerKeys = Object.keys(answers);
+    if (answerKeys.length !== questions.length || questions.some((question) => !answerKeys.includes(question.id))) {
+      return NextResponse.json({ error: "Select one answer for every question before submitting." }, { status: 400 });
+    }
 
-    const attemptId = `att_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const optionsResult = await query<QuizOptionRow>(
+      `SELECT o.id, o.question_id, o.option_text, o.is_correct, o.explanation, o.sort_order
+         FROM quiz_options o
+         JOIN quiz_questions q ON q.id = o.question_id
+        WHERE q.lesson_id = $1
+        ORDER BY q.sort_order, o.sort_order`,
+      [lesson.id],
+    );
+    const optionsByQuestion = new Map<string, QuizOptionRow[]>();
+    for (const option of optionsResult.rows) {
+      const list = optionsByQuestion.get(option.question_id) ?? [];
+      list.push(option);
+      optionsByQuestion.set(option.question_id, list);
+    }
 
-    for (const q of questionsRes.rows) {
-      const selectedOptionId = answers[q.id];
-      const optionsRes = await query(
-        `SELECT id, option_text, is_correct, explanation FROM quiz_options WHERE question_id = $1;`,
-        [q.id]
+    const evaluatedAnswers = questions.map((question) => {
+      const selectedId = answers[question.id];
+      if (typeof selectedId !== "string") return null;
+      const options = optionsByQuestion.get(question.id) ?? [];
+      const selected = options.find((option) => option.id === selectedId);
+      const correct = options.find((option) => option.is_correct);
+      if (!selected || !correct) return null;
+      return {
+        questionId: question.id,
+        questionText: question.question_text,
+        selectedOptionId: selected.id,
+        selectedOptionText: selected.option_text,
+        isCorrect: selected.is_correct,
+        correctOptionId: correct.id,
+        correctOptionText: correct.option_text,
+        explanation: selected.is_correct
+          ? selected.explanation
+          : `Your selection: ${selected.explanation} Correct answer (${correct.option_text}): ${correct.explanation}`,
+        optionFeedback: options.map((option) => ({
+          id: option.id,
+          isCorrect: option.is_correct,
+          explanation: option.explanation,
+        })),
+        questionRationale: question.explanation,
+      };
+    });
+    if (evaluatedAnswers.some((answer) => answer === null)) {
+      return NextResponse.json({ error: "One or more selected answers are invalid." }, { status: 400 });
+    }
+
+    const evaluated = evaluatedAnswers as NonNullable<(typeof evaluatedAnswers)[number]>[];
+    const score = evaluated.filter((answer) => answer.isCorrect).length;
+    const totalQuestions = questions.length;
+    const passed = score >= Math.ceil(totalQuestions * 0.8);
+    const attemptId = crypto.randomUUID();
+    const missed = evaluated.filter((answer) => !answer.isCorrect).map((answer) => answer.questionText);
+
+    await withTransaction(async (tx) => {
+      await tx.query(
+        `INSERT INTO quiz_attempts (id, user_id, lesson_id, score, total_questions, passed)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [attemptId, user.id, lesson.id, score, totalQuestions, passed],
       );
 
-      const correctOption = optionsRes.rows.find((o) => o.is_correct);
-      const selectedOption = optionsRes.rows.find((o) => o.id === selectedOptionId);
-      const isCorrect = selectedOption?.is_correct || false;
-
-      if (isCorrect) {
-        totalScore++;
-      } else {
-        missedTopics.push(q.question_text);
-      }
-
-      evaluatedAnswers.push({
-        questionId: q.id,
-        questionText: q.question_text,
-        selectedOptionId,
-        selectedOptionText: selectedOption?.option_text || "None selected",
-        isCorrect,
-        correctOptionId: correctOption?.id,
-        correctOptionText: correctOption?.option_text,
-        explanation: selectedOption?.explanation || correctOption?.explanation || q.explanation,
-      });
-    }
-
-    const passed = totalScore >= Math.ceil(totalQuestions * 0.8); // 80% passing standard
-
-    // 3. Record attempt in database
-    await query(
-      `INSERT INTO quiz_attempts (id, user_id, lesson_id, score, total_questions, passed)
-       VALUES ($1, $2, $3, $4, $5, $6);`,
-      [attemptId, user.id, lesson.id, totalScore, totalQuestions, passed]
-    );
-
-    // 4. Record individual answers
-    for (const ans of evaluatedAnswers) {
-      if (ans.selectedOptionId) {
-        await query(
+      for (const answer of evaluated) {
+        await tx.query(
           `INSERT INTO quiz_answers (id, attempt_id, question_id, selected_option_id, is_correct)
-           VALUES ($1, $2, $3, $4, $5);`,
-          [`qa_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, attemptId, ans.questionId, ans.selectedOptionId, ans.isCorrect]
+           VALUES ($1, $2, $3, $4, $5)`,
+          [crypto.randomUUID(), attemptId, answer.questionId, answer.selectedOptionId, answer.isCorrect],
         );
       }
-    }
 
-    // 5. Update lesson progress
-    const progressStatus = passed ? "completed" : "in_progress";
-    await query(
-      `INSERT INTO lesson_progress (id, user_id, lesson_id, status, completed_at, updated_at)
-       VALUES ($1, $2, $3, $4, ${passed ? "CURRENT_TIMESTAMP" : "NULL"}, CURRENT_TIMESTAMP)
-       ON CONFLICT (user_id, lesson_id) DO UPDATE SET
-         status = CASE WHEN lesson_progress.status = 'completed' THEN 'completed' ELSE EXCLUDED.status END,
-         completed_at = CASE WHEN EXCLUDED.status = 'completed' THEN CURRENT_TIMESTAMP ELSE lesson_progress.completed_at END,
-         updated_at = CURRENT_TIMESTAMP;`,
-      [`prog_${user.id}_${lesson.id}`, user.id, lesson.id, progressStatus]
-    );
-
-    // 6. Recalculate competency score for domain
-    const allDomainAttempts = await query(
-      `SELECT qa.score, qa.total_questions
-       FROM quiz_attempts qa
-       JOIN lessons l ON l.id = qa.lesson_id
-       WHERE qa.user_id = $1 AND l.competency_domain = $2;`,
-      [user.id, lesson.competency_domain]
-    );
-
-    if (allDomainAttempts.rows.length > 0) {
-      let earned = 0;
-      let possible = 0;
-      for (const row of allDomainAttempts.rows) {
-        earned += row.score;
-        possible += row.total_questions;
-      }
-      const newScore = Math.round((earned / possible) * 100);
-
-      await query(
-        `UPDATE competency_scores 
-         SET observed_score = $1, total_evaluations = total_evaluations + 1, updated_at = CURRENT_TIMESTAMP
-         WHERE user_id = $2 AND domain = $3;`,
-        [newScore, user.id, lesson.competency_domain]
+      await tx.query(
+        `INSERT INTO lesson_progress (id, user_id, lesson_id, status, completed_at, updated_at)
+         VALUES ($1, $2, $3, $4, CASE WHEN $4 = 'completed' THEN CURRENT_TIMESTAMP ELSE NULL END, CURRENT_TIMESTAMP)
+         ON CONFLICT (user_id, lesson_id) DO UPDATE SET
+           status = CASE
+             WHEN lesson_progress.status = 'completed' THEN 'completed'
+             ELSE EXCLUDED.status
+           END,
+           completed_at = CASE
+             WHEN EXCLUDED.status = 'completed' THEN COALESCE(lesson_progress.completed_at, CURRENT_TIMESTAMP)
+             ELSE lesson_progress.completed_at
+           END,
+           updated_at = CURRENT_TIMESTAMP`,
+        [`progress_${crypto.randomUUID()}`, user.id, lesson.id, passed ? "completed" : "in_progress"],
       );
-    }
+    });
 
-    // 7. Targeted recommendation if incorrect
-    let targetedRecommendation = null;
-    if (!passed) {
-      targetedRecommendation = {
-        title: `Targeted Review: ${lesson.title}`,
-        guidance: `You answered ${totalScore}/${totalQuestions} questions correctly. Focus your review on: ${missedTopics.slice(0, 2).join("; ")}. Review the teaching sections above before retrying.`,
-      };
+    const domain = lesson.competency_domain as CompetencyDomain;
+    if (domain in { hardware_safety: 1, color_oris: 1, metis_scanning: 1, customer_docs: 1, company_interview: 1 }) {
+      await recalculateCompetency(user.id, domain);
     }
 
     return NextResponse.json({
       success: true,
-      score: totalScore,
+      attemptId,
+      score,
       totalQuestions,
-      percentage: Math.round((totalScore / totalQuestions) * 100),
+      percentage: Math.round((score / totalQuestions) * 100),
       passed,
-      evaluatedAnswers,
-      targetedRecommendation,
+      evaluatedAnswers: evaluated,
+      targetedRecommendation: passed
+        ? null
+        : {
+            title: `Targeted Review: ${lesson.title}`,
+            guidance: `You answered ${score}/${totalQuestions} correctly. Revisit: ${missed.slice(0, 2).join("; ")}. Use the section explanations above before retrying.`,
+          },
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to submit quiz" }, { status: 500 });
+  } catch (error) {
+    console.error("Quiz submission failed", error);
+    return NextResponse.json({ error: "Unable to record this knowledge check." }, { status: 500 });
   }
 }

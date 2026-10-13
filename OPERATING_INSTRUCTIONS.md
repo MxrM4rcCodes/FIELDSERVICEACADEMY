@@ -1,211 +1,118 @@
-# CGS ORIS FIELD SERVICE ACADEMY
-## Comprehensive Technical Documentation & Operating Manual
+# Field Service Academy — Operating Instructions
 
-> **Subtitle:** *Learn the Systems. Diagnose the Faults. Master the Workflow.*  
-> **Target Role:** CGS ORIS Americas Field Service Technician (Plymouth, Minnesota Depot)  
-> **Platform Version:** 1.0.0 (Production Release)
+This guide covers how to use and locally operate the independent learning application in this repository. It is not a manufacturer manual, an employer procedure, a safety plan, or a professional qualification.
 
----
+> **Independence notice:** This platform is not affiliated with or endorsed by CGS ORIS, METIS, or Platinum Technologies. Product names are used for educational orientation. Diagrams and equipment examples are conceptual.
 
-## 1. PROJECT OVERVIEW & ACCOMPLISHMENTS
+## 1. Start the application
 
-The **CGS ORIS Field Service Academy** is a database-backed, multi-user web application engineered to prepare candidates for the CGS ORIS Americas Field Service Technician interview and to serve as an ongoing training platform for industrial inkjet printing, surface scanning, color management, safety, and customer service.
+### Local development
 
-### Core Implementation Highlights
-1. **Full-Stack Architecture**: Built on Next.js 14 (App Router), React 18, TypeScript, Tailwind CSS, and Lucide icons.
-2. **Relational PostgreSQL Database**: Powered by `@electric-sql/pglite` with persistent local disk storage in `./data/pgdata/`. Features 26 relational tables, strict foreign keys, cascade rules, and indexes. Fully compatible with external PostgreSQL instances via connection strings.
-3. **Session Authentication & Security**: JWT session cookies (`jose`), password hashing (`bcryptjs`), and server-enforced role-based access control (`admin` and `learner`).
-4. **Curriculum Scope**:
-   - **Track A (3-Day Interview Bootcamp)**: 8-hour accelerated interview sprint.
-   - **Track B (14-Day Full Technical Course)**: 21-hour structured curriculum covering all 14 instructional days with >= 3 substantial teaching blocks, annotated visual explanations, realistic field examples, interactive practice drills, 5-question knowledge checks (70 questions total) with rationales for all choices, and printable reference sheets.
-5. **Interactive Diagnostic Simulator**: All 10 required real-world field scenarios with hidden underlying root causes, dynamic choice branching, safety penalties, least-invasive diagnostic scoring, revealed evidence audit logs, and automatic service ticket generation.
-6. **Vector-Based Visual Systems**:
-   - **Interactive Systems Map (`/systems-map`)**: Vector workflow with 5 selectable pathways and node detail panels.
-   - **Printer Anatomy Lab (`/printer-lab`)**: 13 clickable electromechanical subsystems with "Trace the Fault" symptom mapping.
-   - **Troubleshooting Decision Tree (`/troubleshooting`)**: Systematic flowchart enforcing OSHA LOTO and PPE stops.
-7. **Metrology & Specialized Labs**:
-   - **Color Science Lab (`/color-lab`)**: Interactive $\Delta E_{00}$ and $\Delta E_{76}$ calculator, substrate white-point simulator, and ISO 13655 M-modes guide.
-   - **ORIS Product Explorer (`/oris`)**: Product breakdown and customer-needs matching game.
-   - **METIS Surface Imaging Lab (`/metis`)**: SynchroLight multi-angle directional lighting simulator and artifact triage matrix.
-   - **Flashcards & Glossary (`/flashcards`)**: 66 technical terms across 8 categories with 3D flip animations and Leitner spaced-repetition mastery tracking.
-   - **Interview Studio (`/interview`)**: Technical and STAR behavioral question practice with 5-part rubric scoring.
-   - **Service Documentation Lab (`/service-tickets`)**: 10-field audit-compliant field service ticket generator and printable report engine.
-   - **Study & Print Center (`/print-center`)**: Print-optimized sheets (`@media print`) with zero clipped labels.
-   - **Content Administration Console (`/admin`)**: Server-enforced administrative oversight (`role === 'admin'`).
-8. **Automated Verification**: 23 automated tests across 6 Vitest suites covering all 10 acceptance workflows.
+Requirements: Node.js 20.9 or newer and npm.
 
----
+```bash
+npm ci
+npm run dev
+```
 
-## 2. SYSTEM ARCHITECTURE & DATABASE DESIGN
+The development command applies pending database migrations, seeds the course content, and starts the Next.js development server on port 3000. With no `DATABASE_URL`, local PGlite data is stored under `data/pgdata/` (or the directory specified by `PG_DATA_DIR`). Keep that directory out of source control.
 
-### Database Relational Schema (26 Tables)
-- **Identity & Authorization**: `users`, `profiles`
-- **Curriculum Structure**: `learning_tracks`, `courses`, `modules`, `lessons`, `lesson_content_blocks`
-- **Assessment & Progress**: `lesson_progress`, `quiz_questions`, `quiz_options`, `quiz_attempts`, `quiz_answers`
-- **Diagnostic Simulation Engine**: `troubleshooting_scenarios`, `scenario_nodes`, `scenario_choices`, `scenario_runs`, `scenario_events`
-- **Glossary & Mastery**: `flashcards`, `flashcard_mastery`
-- **Adaptive Competency Engine**: `competency_scores`
-- **Field Operations & Notes**: `user_notes`, `interview_questions`, `interview_attempts`, `service_tickets`
-- **Audit & Compliance**: `source_references`, `content_revisions`
+Open `http://localhost:3000`, choose **Create account**, and register a learner account. The seed routine does not create published demo credentials. Local development has a development-only fallback session secret; do not use that fallback in a shared or production environment.
 
-### Competency Weight Model
-Observed mastery scores are distinguished from curricular priority weights:
-- **Hardware, Diagnostics & Safety**: 35% priority weight
-- **Color Science & ORIS Workflows**: 25% priority weight
-- **METIS Material Scanning**: 15% priority weight
-- **Customer Support & Documentation**: 15% priority weight
-- **Company & Interview Knowledge**: 10% priority weight
+### PostgreSQL and production configuration
 
----
+When `DATABASE_URL` is set, the application connects to PostgreSQL and applies versioned SQL migrations. `DATABASE_URL` is required when `NODE_ENV=production`; the production app will not substitute local PGlite storage.
 
-## 3. OPERATING INSTRUCTIONS FOR A LEARNER / CANDIDATE
+Configure a private `JWT_SECRET` of at least 32 characters in production. Optional database settings are `DATABASE_SSL=true`, `DATABASE_SSL_REJECT_UNAUTHORIZED=false` only when explicitly required by a trusted provider, `DATABASE_POOL_SIZE`, and `PG_DATA_DIR` for local PGlite use. Store secrets in the deployment secret manager; do not commit them or paste them into tickets.
 
-### A. Accessing the Platform & Authentication
-1. **Candidate Login Credentials**:
-   - **Email**: `technician@cgs-oris.academy`
-   - **Password**: `FieldTech2026!`
-   - *Alternative*: Click the user icon in the top-right corner of the navigation bar and select **"Alex Morgan (Learner)"** to activate the candidate session instantly.
-2. All progress, quiz scores, scenario runs, personal notes, and flashcard mastery persist automatically in the database.
+A production build, hosting account, managed database, backup plan, or deployment is not created by this repository. Configure and verify those items for the intended environment before exposing the service to users.
 
-### B. Candidate Dashboard Operations (`/`)
-1. **Setting Target Interview Date**:
-   - View the **"Days Remaining"** countdown widget.
-   - Click the **pencil icon** next to the target interview date to enter your scheduled interview date; click **Save** to update the database.
-2. **Switching Active Track**:
-   - Toggle between **"Track B: Full 14-Day Technical Course"** (recommended for full preparation) and **"Track A: 3-Day Interview Bootcamp"** (accelerated 8-hour sprint).
-3. **Resuming Learning**:
-   - Click the primary **"Resume Learning"** button to jump directly to your next uncompleted or in-progress module.
-4. **Reviewing Competency Radar**:
-   - Monitor observed mastery across the 5 domains. Note the **Adaptive Recommendation Banner**, which suggests the exact lesson or scenario needed to address your lowest competency.
+## 2. Learner workflow
 
-### C. Completing Daily Curriculum Lessons (`/course` and `/lessons/[slug]`)
-1. **Structured Learning Sequence**:
-   - Read the **Objectives & Prerequisites** to understand target outcomes.
-   - Work through the **Teaching Sections**, **Annotated Diagrams**, and **Realistic Field Examples**.
-   - Complete the **Interactive Practice Drill**.
-2. **Knowledge Check Quizzes**:
-   - Each lesson concludes with a **5-question diagnostic assessment**.
-   - Select your answers and click **"Submit Knowledge Check"**.
-   - Passing threshold is **80% (4 of 5 correct)**.
-   - Review the detailed explanations provided for both correct and incorrect options. If you do not pass, review the **Targeted Recommendation** callout and click **"Retry Knowledge Check"**.
-3. **Taking Personal Field Notes**:
-   - Use the **"Personal Field Notes"** box at the bottom of the lesson to record key machine specifications (e.g., negative pressure tolerances). Notes persist in your database account.
+### Sign-in and saved learning
 
-### D. Using Visual Systems & Diagnostic Labs
-1. **Interactive Systems Map (`/systems-map`)**:
-   - Trace the 7 production stages from raw physical specimen or digital PDF to post-cure measurement.
-   - Use the pathway toolbar to highlight specific flows: *Digital to Print*, *Physical to METIS*, *Contract Proofing*, *Production Verify*, or *Closed-Loop Feedback*.
-   - Click any node to open the detail panel showing inputs, outputs, failure modes, and field diagnostic questions.
-   - Use the **Zoom (+ / -)** and **Reset** buttons for navigation.
-2. **Printer Anatomy Lab (`/printer-lab`)**:
-   - Click through the **13 electromechanical subsystems** to inspect functional operations and failure symptoms.
-   - Use **"Trace the Fault Mode"** to select a symptom (e.g., *Horizontal Banding* or *Head-Strike Risk*). Implicated subsystems pulse with amber indicators.
-   - Test your knowledge with the practice question inside each subsystem drawer.
-3. **Troubleshooting Decision Tree (`/troubleshooting`)**:
-   - Follow the step-by-step diagnostic logic: *Customer Report → Safety Assessment → Evidence Gathering → Subsystem Isolation → Action → Verification → Documentation*.
-   - Observe mandatory OSHA safety interlock stops before proceeding.
+1. Register at `/register` or sign in at `/login`.
+2. The dashboard at `/` shows the selected track, saved lesson completion, recommendations, recent learning activity, and other study summaries available for the account.
+3. Use **Resume Learning** or the course navigation to open a lesson. Changing a profile setting such as the active track is saved to the signed-in account.
+4. Lesson reading can be saved as in-progress. Read the instructional sections and practice prompts at your own pace; the assessment is available when you are ready.
+5. Submit the lesson knowledge check to save an attempt. A passing score is 80% or higher; only a passing saved knowledge check marks that lesson complete. Review the feedback before retrying.
+6. Personal notes, lesson progress, quiz attempts, flashcard reviews, interview practice, and scenario runs are associated with the authenticated account. A practice score is a learning signal, not a measure of professional competence.
 
-### E. Executing Branching Diagnostic Scenarios (`/scenarios`)
-1. Select any of the **10 real-world service cases**.
-2. Review the customer complaint, machine context, and recent changes.
-3. Choose your diagnostic action or test. Note:
-   - Hidden underlying states are revealed **only after** an authorized test is selected.
-   - Least-invasive tests (e.g., nozzle checks, loupe inspections) earn diagnostic points.
-   - Frantic parts-swapping or bypassing interlocks incurs severe cost or safety penalties.
-4. Upon achieving a **Terminal Success**, click **"Generate Official Service Ticket"** to pre-populate a formal service report.
+### Study paths and learning pages
 
-### F. Specialized Metrology Labs
-1. **Color Science Lab (`/color-lab`)**:
-   - Adjust the **Reference** and **Sample** sliders in the Delta E Calculator to compute real-time $\Delta E_{00}$ and $\Delta E_{76}$ values.
-   - Compare commercial tolerance ratings (*Pass*, *Marginal*, *Severe Mismatch*).
-   - Test substrate white-point shifts across High-Gloss White Vinyl, Uncoated Kraft Board, and Fluted Polypropylene.
-   - Review ISO 13655 measurement modes (**M0, M1, M2, M3**).
-2. **ORIS Product Explorer (`/oris`)**:
-   - Study product cards for COLOR TUNER, PRESS MATCHER, X GAMUT, FLEX PACK, CERTIFIED & EVALUATE, and CxF TOOLBOX.
-   - Play the **Customer-Needs Matching Exercise** to test your solution mapping skills.
-3. **METIS Surface Imaging Lab (`/metis`)**:
-   - Toggle the **SynchroLight** angles (*Diffuse, Left, Right, Top, Synchro*) to see how directional micro-shadows generate 3D normal, relief, and gloss maps.
-   - Review the scanner artifact vs. printer defect triage table.
+- **14-Day Course (`/course`)** — the self-paced curriculum, with lesson pages at `/lessons/[slug]`.
+- **3-Day Bootcamp (`/course?track=bootcamp`)** — a shorter interview-preparation path that groups selected curriculum lessons by bootcamp day. The Day 1 company/product-family association and Day 3 equipment-safety lesson slug are stable seed content; do not replace those identities when changing recommendations or course links.
+- **Systems Map (`/systems-map`)** — interactive, conceptual workflow nodes and practice questions. The map is not a proprietary product schematic or proof of a specific installed integration.
+- **Printer Lab (`/printer-lab`)** — conceptual printer-system learning areas. Use current model-specific documentation for any real equipment detail or action.
+- **Troubleshooting (`/troubleshooting`)** — general symptom scoping, evidence limits, stop-work decisions, and escalation practice. It does not provide repair or energy-isolation steps.
+- **Scenarios (`/scenarios`)** — 10 simulated branching cases. Choices are recorded against the learner's active run; restarting retains the old run as abandoned history. A case outcome is not a real equipment diagnosis or proof that a repair was performed.
+- **Color Lab (`/color-lab`)** — interactive illustrative CIELAB values, Delta E calculations, substrate examples, and measurement-condition learning. The on-screen coordinates and swatches are not instrument readings. A Delta E value is not, by itself, an acceptance decision; use the agreed target, substrate, conditions, method, and tolerance.
+- **METIS (`/metis`) and ORIS (`/oris`)** — public product-family orientation and simulated workflow/requirement exercises. ORIS requirement-check responses and scores are saved to the signed-in account. Verify any current model, version, feature, or integration claim against an appropriate primary source.
+- **Flashcards (`/flashcards`)** — review cards by category or search and save a review response.
+- **Interview Studio (`/interview`)** — practice responses and review a disclosed heuristic rubric. It does not verify technical truth, work history, qualification, or hiring readiness.
+- **Service Tickets (`/service-tickets`)** — create and edit private, account-scoped training records, then print the selected record. Use simulated or sanitized examples; do not enter passwords, tokens, or unnecessary customer data. The form is not an official OEM, employer, warranty, audit-certified, or compliance document.
+- **Print Center (`/print-center`)** — select and print the educational worksheets. The safety sheet is a stop-work boundary summary, not a site-specific LOTO sequence or emergency response plan.
 
-### G. Flashcards & Glossary (`/flashcards`)
-1. Filter 66 technical terms by category or search by keyword.
-2. Click any card to trigger the **3D flip animation** to read field context, key takeaways, and common misconceptions.
-3. Click **"✓ Mark Known"** or **"Needs Review"** to update your database-backed Leitner spaced-repetition mastery level (Levels 0 to 5).
+## 3. Safety and technical-content boundaries
 
-### H. Interview Studio (`/interview`)
-1. Select a technical, behavioral (STAR), or customer-handling question.
-2. Read the **Transferable Skills Coaching** tip.
-3. Type or dictate your verbal practice answer and click **"Submit for Structured Evaluation"**.
-4. Review your **5-part rubric score** (Technical, Safety, Customer, Verification, Clarity) out of 100 points, evaluator feedback, and benchmark model answers.
+For any real equipment or workplace concern, follow the employer/site safety program, current equipment documentation for the exact model and configuration, and qualified authorized guidance. A stop button or emergency stop does not by itself establish hazardous-energy isolation. This application does not grant service authorization, select PPE, prescribe service-menu access, or provide electrical, chemical, mechanical, calibration, cleaning, or parts-replacement procedures.
 
-### I. Service Documentation Lab (`/service-tickets`)
-1. Draft formal 10-field Field Service Reports including equipment S/N, complaints, LOTO safety audits, tests, observations, actions taken, verification results, and customer communication.
-2. Select any ticket and click **"Print Service Report"** for a clean, audit-compliant physical printout.
+The lessons distinguish reports, observations, hypotheses, tests, and verified outcomes. For example, a clean static print pattern does not rule out every printhead or dynamic fault; banding does not identify a single cause; and device families can differ in heads, inks, curing, options, and workflows. Do not generalize one model's feature or procedure to another.
 
-### J. Study & Print Center (`/print-center`)
-1. Select printable field sheets including the *OSHA LOTO Safety Protocol*, *Installation Checklist*, *Defect Isolation Matrix*, and *Blank FST Forms*.
-2. Click **"Print Active Document"** to print or export to PDF with print-optimized CSS.
+Source notes describe what a citation supports and what it does not. Public portfolio pages are not feature matrices, service manuals, or records of a customer's installed configuration. ISO references and formula descriptions do not set universal customer acceptance tolerances. Use the full current source and job/site-specific requirements when appropriate.
 
----
+## 4. Service-record and account handling
 
-## 4. OPERATING INSTRUCTIONS FOR AN ADMINISTRATOR
+Server routes resolve the signed-in identity and scope learner records to that user. Do not treat a user-supplied record ID as authorization to view or change someone else's information. Administrator privileges are checked on the server; changing client-side text or a URL does not grant an administrator role.
 
-### A. Accessing the Admin Console (`/admin`)
-1. **Admin Login Credentials**:
-   - **Email**: `admin@cgs-oris.academy`
-   - **Password**: `Admin123!`
-   - *Alternative*: Click the user icon in the top-right corner of the navigation bar and select **"Sarah Jenkins (Admin)"**.
-2. **Server-Side Security**:
-   - The `/admin` route and `/api/admin` endpoints enforce server-level role verification (`user.role === 'admin'`). Non-admin learners attempting direct access receive an HTTP `403 Forbidden` response.
+Use training aliases and non-sensitive content in learning exercises. Do not use this independent application as an employer's source of record, service log, safety certification, or customer-document exchange. Follow the data-handling and retention rules of the organization responsible for any real customer information.
 
-### B. Administrative Capabilities
-1. **System Health & Platform Metrics**:
-   - Review live counters for registered users, lessons, quiz questions, diagnostic scenarios, flashcards, and service tickets.
-2. **Curriculum Lesson Editing**:
-   - Select any of the 14 lessons from the dropdown.
-   - Edit the lesson title, summary description, and estimated study minutes.
-   - Click **"Commit Lesson Revision"**. Changes take effect immediately in the database.
-3. **Content Revision Audit Trail**:
-   - The admin console automatically logs all content modifications into the `content_revisions` table with timestamps, entity IDs, author IDs, and diff summaries.
-4. **Candidate Account Registry**:
-   - Inspect all registered candidate profiles, active tracks, target interview dates, and role assignments.
+## 5. Administrator operations
 
-### C. Server Maintenance & Database Operations
-1. **Running Database Seed**:
-   ```bash
-   npm run seed
-   ```
-   Re-initializes and verifies all tracks, modules, lessons, content blocks, quiz questions, scenarios, nodes, choices, flashcards, and references.
-2. **Running Automated Test Suites**:
-   ```bash
-   npm run test
-   ```
-   Executes all 23 unit, integration, and acceptance tests using Vitest.
-3. **Building for Production**:
-   ```bash
-   npm run build
-   ```
-   Compiles Next.js 14 production bundles and pre-renders static routes.
-4. **Starting the Production Server**:
-   ```bash
-   npm run start
-   ```
-   Launches the optimized server bound to `0.0.0.0:3000`.
+### Create an administrator
 
----
+Public registration creates a learner account only. After configuring the database, create an administrator through the protected bootstrap command:
 
-## 5. TECHNICAL SOURCE REFERENCES & CONFIDENCE RATINGS
+```bash
+ADMIN_EMAIL=admin@example.com \
+ADMIN_PASSWORD='a-unique-secret-of-at-least-12-characters' \
+ADMIN_NAME='Academy Administrator' \
+npm run db:bootstrap-admin
+```
 
-| Reference ID | Title & Citation | Confidence Level | Scope |
-| :--- | :--- | :--- | :--- |
-| **REF-01** | CGS ORIS Americas Field Service Specification (Plymouth, MN Hub 2024–2026) | `confirmed_spec` | Operations hub, demo/staging depot, pre-shipment bench testing, and travel reality. |
-| **REF-02** | OSHA 29 CFR 1910.147 Control of Hazardous Energy (Lockout/Tagout) | `industry_standard` | Mandatory life-safety, physical disconnect padlocks vs. control E-Stops. |
-| **REF-03** | ISO 13655:2017 Spectral Measurement and Colorimetric Computation | `industry_standard` | M0, M1 (D50 Daylight with UV), M2 (UV-Cut), and M3 (Polarized) standards. |
-| **REF-04** | Industrial UV-LED Inkjet Subsystem Architecture (Platinum Technologies) | `conceptual_model` | 13 electromechanical subsystems, negative pressure hydraulics (-3.2 kPa), encoders. |
-| **REF-05** | METIS Systems Surface Digitizing & Photometric Stereo Manual (Rome, Italy) | `confirmed_spec` | SynchroLight directional LED lighting, 3D relief/normal maps, shading calibration. |
-| **REF-06** | CGS ORIS Software Suite Technical Guides (International GmbH) | `confirmed_spec` | Color Tuner, Press Matcher, X Gamut, Flex Pack, Certified & Evaluate, CxF Toolbox. |
-| **REF-07** | ASTM D3359 Rating Adhesion by Tape Test | `industry_standard` | Cross-hatch lattice cut method for verifying UV photopolymerization and substrate bonding. |
+Supply these values through a secure local environment or secret manager, not through a committed file. The command does not print the password. Existing accounts are not silently promoted if an email already exists.
 
----
+### Admin console
 
-*CGS ORIS Field Service Academy — Engineered for Arena.ai.*
+An administrator can use `/admin` to review available platform counts, registered accounts, and content revision history, and to revise lesson title, summary, and estimated study time. The API verifies the current database role on the server. Learner accounts cannot use those privileged endpoints. Seeded lesson bodies and question content are maintained in `src/lib/db/seed-data/`; edits that conflict with the seed should be made and reviewed there, then seeded deliberately.
+
+### Migrations and seed content
+
+```bash
+npm run db:migrate
+npm run seed
+```
+
+Migrations are versioned under `src/lib/db/migrations/`. Seeding inserts or updates course content and scenario graphs; it does not create learner accounts. Review changes to seed files before reseeding a database that contains in-progress learner activity.
+
+## 6. Verification commands
+
+```bash
+npm run typecheck
+npm run test          # unit and integration tests, excluding E2E
+npm run test:e2e      # isolated database and local HTTP acceptance tests
+npm run build
+```
+
+Run and report the commands against the current checkout; historical test results do not establish the status of later changes. Tests do not replace a security, safety, technical-content, or deployment review.
+
+## 7. Useful project locations
+
+- Application pages and API routes: `src/app/`
+- Authentication and authorization helpers: `src/lib/auth.ts`, `src/lib/accounts.ts`, `src/proxy.ts`
+- Database connection and transactions: `src/lib/db/index.ts`
+- SQL migrations: `src/lib/db/migrations/`
+- Curriculum and learning content: `src/lib/db/seed-data/`
+- Seed routine: `src/lib/db/seed.ts`
+- Automated tests: `tests/`
+- Development, migration, seed, and E2E scripts: `scripts/`

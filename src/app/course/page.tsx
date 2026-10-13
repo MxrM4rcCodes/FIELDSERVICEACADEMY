@@ -43,13 +43,13 @@ function CourseContent() {
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight mt-1">
             {activeTrack === "bootcamp"
-              ? "Track A: 3-Day Interview Bootcamp (8 Hours)"
-              : "Track B: Full 14-Day Technical Course (21 Hours)"}
+              ? "Track A: 3-Day Interview Bootcamp"
+              : "Track B: Full 14-Day Technical Course"}
           </h1>
           <p className="text-xs text-slate-400 max-w-2xl">
             {activeTrack === "bootcamp"
-              ? "High-intensity sprint designed for upcoming interviews. Systems knowledge, troubleshooting decision tree, and mock interview simulation."
-              : "Comprehensive professional field engineering curriculum. Platinum hardware, METIS optics, ORIS color science, OSHA safety, and field commissioning."}
+              ? "A short, independent interview-preparation path covering product-family research, safe fault reasoning, and truthful response practice."
+              : "Self-paced lessons on industrial imaging workflows, equipment concepts, safety reasoning, measurement, documentation, and interview practice. Product-specific work requires current authorized documentation."}
           </p>
         </div>
 
